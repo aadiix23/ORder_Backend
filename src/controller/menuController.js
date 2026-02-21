@@ -3,7 +3,7 @@ const Menu = require("../models/menu/menuSchema");
 exports.createMenuItem = async(req,res)=>{
     try {
         const menuItem =await Menu.create(req.body);
-        res.status(201).json({success:true, message:"Item Created Sucessfully"})
+        res.status(201).json({success:true, message:"Item Created successfully"})
     } catch (error) {
         res.status(400).json({success:false,message:error.message})
     }
@@ -65,7 +65,7 @@ exports.updateMenuById = async(req,res)=>{
         else{
             res.status(200).json({
                 success:true,
-                message:"Updated Item Sucessfully",
+                message:"Updated Item successfully",
                 data:updatedItem
             })
         }
