@@ -60,10 +60,10 @@ exports.placeOrder = async(req,res)=>{
     }
 }
 
-//All Orders For Me
+//All Orders For Admin
 exports.getAllOrder = async(req,res)=>{
     try {
-        const orders = await Order.findOne()
+        const orders = await Order.find()
         .populate("items.menuItem")
         .sort({createdAt:-1})
 
@@ -79,4 +79,59 @@ exports.getAllOrder = async(req,res)=>{
         })
     }
 }
+//get order by table\
 
+exports.getOrderByTable  = async(req,res)=>{
+    try {
+        const {tableNumber}=req.params;
+        const orders = await Order.find({tableNumber})
+        .populate("items.menuItem")
+        .sort({createdAt:-1})
+
+        res.status(201).json({
+            success:true,
+            count:orders.length,
+            data:orders
+        })
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+//Update Order Status
+
+exports.updateOrderStatus = async(req,res)=>{
+    try {
+        const {status}= req.body;
+         const allowedStatus = ["Pending", "Preparing", "Ready", "Served", "Completed"];
+         if(!allowedStatus.includes(status)){
+            return res.status(400).json({
+                success:false,
+                message:"Status Is Not Valid"
+            })
+         }
+         const order = await Order.findById(req.params.id);
+         if(!order){
+            return res.status(404).json({
+                success:false,
+                message:"Order Not Found"
+            })
+         }
+         order.status=status;
+         await order.save();
+
+         res.status(200).json({
+            success:true,
+            message:"Order Status Updated Sucessfully",
+            data:order
+         })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
