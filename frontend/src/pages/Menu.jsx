@@ -85,13 +85,12 @@ const Menu = () => {
         setIsCartLoading(true);
 
         try {
-            const tableInt = parseInt(tableNumber);
-            if (isNaN(tableInt)) {
+            if (!tableNumber) {
                 throw new Error("Invalid Table Number in your URL or Scanner.");
             }
 
             const payload = {
-                tableNumber: tableInt,
+                tableNumber: tableNumber,
                 restaurantId: restaurantId,
                 menuItemId: item._id,
                 quantity: 1

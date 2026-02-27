@@ -42,7 +42,7 @@ const Cart = () => {
         if (newQty < 1) return;
         try {
             await cartApi.update({
-                tableNumber: parseInt(tableNumber),
+                tableNumber: tableNumber,
                 restaurantId,
                 menuItemId,
                 quantity: newQty
@@ -56,7 +56,7 @@ const Cart = () => {
     const removeItem = async (menuItemId) => {
         try {
             await cartApi.remove({
-                tableNumber: parseInt(tableNumber),
+                tableNumber: tableNumber,
                 restaurantId,
                 menuItemId
             });
@@ -72,8 +72,7 @@ const Cart = () => {
             return;
         }
 
-        const tableInt = parseInt(tableNumber);
-        if (isNaN(tableInt)) {
+        if (!tableNumber) {
             alert('Invalid table number.');
             return;
         }
@@ -81,7 +80,7 @@ const Cart = () => {
         setPlacingOrder(true);
         try {
             await orderApi.place({
-                tableNumber: tableInt,
+                tableNumber: tableNumber,
                 restaurantId
             });
             setOrderSuccess(true);
@@ -145,7 +144,7 @@ const Cart = () => {
                 <h1>Finalize <span>Order</span></h1>
             </header>
 
-            {!cart || cart.items.length === 0 ? (
+            {!cart || !cart?.items?.length ? (
                 <div className="glass" style={{ textAlign: 'center', padding: '100px 20px' }}>
                     <ShoppingBag size={80} color="rgba(255,255,255,0.05)" style={{ marginBottom: '20px' }} />
                     <h2 style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Your tray is empty</h2>

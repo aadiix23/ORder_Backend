@@ -21,7 +21,7 @@ import {
     ImagePlus,
     QrCode
 } from 'lucide-react';
-import { orderApi, menuApi, uploadApi } from '../api/api';
+import { orderApi, menuApi, uploadApi, restaurantApi } from '../api/api';
 
 const CATEGORIES = ['Starter', 'Main', 'Main Course', 'Dessert', 'Drink', 'Sides'];
 
@@ -32,10 +32,12 @@ const getStatusClass = (status) => {
     return 'status-pending';
 };
 
+const STATUSES = ["Pending", "Preparing", "Ready", "Served", "Completed"];
+
 /* ============================
    OVERVIEW TAB
    ============================ */
-const OverviewTab = ({ orders, loading, error, stats, fetchOrders }) => (
+const OverviewTab = ({ orders, loading, error, stats, fetchOrders, updateOrderStatus }) => (
     <>
         <div className="db-topbar">
             <div>
@@ -86,9 +88,25 @@ const OverviewTab = ({ orders, loading, error, stats, fetchOrders }) => (
                     <article key={order._id} className="db-order-card">
                         <div className="db-order-head">
                             <h3>Table #{order.tableNumber}</h3>
-                            <span className={`db-status-pill ${getStatusClass(order.status)}`}>
-                                {order.status || 'Pending'}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <select
+                                    className={`db-status-pill ${getStatusClass(order.status)}`}
+                                    value={order.status || 'Pending'}
+                                    onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                                    style={{
+                                        cursor: 'pointer',
+                                        border: 'none',
+                                        outline: 'none',
+                                        appearance: 'none',
+                                        padding: '4px 12px',
+                                        fontWeight: 'bold',
+                                        textTransform: 'uppercase',
+                                        fontSize: '0.75rem'
+                                    }}
+                                >
+                                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
                         </div>
                         <p className="db-order-meta">Order ID: {order._id}</p>
                         <p className="db-order-meta">Placed: {new Date(order.createdAt).toLocaleString()}</p>
@@ -773,10 +791,25 @@ const AdminDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [restaurantName, setRestaurantName] = useState('QRder Admin');
 
     useEffect(() => {
         fetchOrders();
+        fetchRestaurantName();
     }, []);
+
+    const fetchRestaurantName = async () => {
+        const id = localStorage.getItem('restaurantId');
+        if (!id) return;
+        try {
+            const res = await restaurantApi.getById(id);
+            if (res?.data?.data?.name) {
+                setRestaurantName(res.data.data.name);
+            }
+        } catch (err) {
+            console.error('Failed to fetch restaurant details:', err);
+        }
+    };
 
     const stats = useMemo(() => {
         const totalOrders = orders.length;
@@ -804,22 +837,33 @@ const AdminDashboard = () => {
         navigate('/login');
     };
 
+    const updateOrderStatus = async (id, status) => {
+        try {
+            await orderApi.updateStatus(id, status);
+            fetchOrders(); // Refresh after update
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update order status');
+        }
+    }
+
+    const role = localStorage.getItem('role');
+
+    // Filter sidebar based on role
     const sidebarItems = [
-        { icon: <LayoutDashboard size={18} />, label: 'Overview', key: 'overview' },
-        { icon: <UtensilsCrossed size={18} />, label: 'Menu', key: 'menu' },
-        { icon: <QrCode size={18} />, label: 'QR Generator', key: 'qr' },
-        { icon: <ClipboardList size={18} />, label: 'Orders', key: 'overview' },
-        { icon: <Settings size={18} />, label: 'Settings', key: 'settings' }
-    ];
+        { icon: <LayoutDashboard size={18} />, label: 'Overview', key: 'overview', allowed: ['admin', 'chef'] },
+        { icon: <UtensilsCrossed size={18} />, label: 'Menu', key: 'menu', allowed: ['admin'] },
+        { icon: <QrCode size={18} />, label: 'QR Generator', key: 'qr', allowed: ['admin'] },
+        { icon: <Settings size={18} />, label: 'Settings', key: 'settings', allowed: ['admin'] }
+    ].filter(item => item.allowed.includes(role));
 
     return (
         <div className="dashboard-page">
             <aside className="db-sidebar">
                 <div>
                     <div className="db-brand">
-                        <div className="db-brand-icon">Q</div>
+                        <div className="db-brand-icon">{restaurantName.charAt(0).toUpperCase()}</div>
                         <div>
-                            <p className="db-brand-name">QRder Admin</p>
+                            <p className="db-brand-name">{restaurantName}</p>
                             <p className="db-brand-sub">Control Center</p>
                         </div>
                     </div>
@@ -852,6 +896,7 @@ const AdminDashboard = () => {
                         error={error}
                         stats={stats}
                         fetchOrders={fetchOrders}
+                        updateOrderStatus={updateOrderStatus}
                     />
                 )}
                 {activeTab === 'menu' && <MenuTab />}

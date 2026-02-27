@@ -23,7 +23,7 @@ const orderItemSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema({
     tableNumber: {
-        type: Number,
+        type: String,
         required: true
     },
     items: [orderItemSchema],
