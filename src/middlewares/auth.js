@@ -30,3 +30,10 @@ exports.onlyChef = (req,res,next)=>{
   if(req.user.role!=="chef")return res.status(403).json({message:"Chef only"});
   next();
 }
+
+exports.onlyStaff = (req, res, next) => {
+  if (req.user.role !== "admin" && req.user.role !== "chef") {
+    return res.status(403).json({ message: "Admin or Chef only" });
+  }
+  next();
+};
