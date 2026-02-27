@@ -1,15 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #fbbf24;
-  --primary-hover: #f59e0b;
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --primary-light: rgba(124, 58, 237, 0.08);
+  --bg-light: #ffffff;
+  --bg-subtle: #fafbfc;
+  --text-dark: #1a1a2e;
+  --text-muted: #64748b;
+  --border: #f1f5f9;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Dark theme vars (for menu/cart pages) */
   --bg-dark: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.7);
   --text-main: #f8fafc;
-  --text-muted: #94a3b8;
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -20,8 +27,8 @@
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-dark);
-  color: var(--text-main);
+  background-color: var(--bg-light);
+  color: var(--text-dark);
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
@@ -33,16 +40,34 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-dark);
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: #7c3aed;
+}
+
+/* ===========================
+   DARK THEME SCOPE
+   Only for menu/cart pages
+   =========================== */
+.dark-theme {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+}
+
+.dark-theme ::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+.dark-theme ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
 
 .glass {
@@ -66,27 +91,28 @@ body {
   justify-content: center;
   gap: 8px;
   text-decoration: none;
+  font-family: 'Outfit', sans-serif;
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: #fbbf24;
   color: #000;
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: #f59e0b;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
 }
 
 .btn-outline {
   background: transparent;
-  border: 2px solid var(--primary);
-  color: var(--primary);
+  border: 2px solid #fbbf24;
+  color: #fbbf24;
 }
 
 .btn-outline:hover {
-  background: var(--primary);
+  background: #fbbf24;
   color: #000;
 }
 
@@ -96,7 +122,9 @@ body {
   padding: 0 20px;
 }
 
-input, select {
+/* Dark theme inputs (menu/cart) */
+.dark-theme input,
+.dark-theme select {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
@@ -106,17 +134,38 @@ input, select {
   transition: var(--transition);
 }
 
-input:focus {
-  border-color: var(--primary);
+.dark-theme input:focus {
+  border-color: #fbbf24;
   background: rgba(255, 255, 255, 0.1);
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }

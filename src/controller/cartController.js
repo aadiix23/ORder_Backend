@@ -15,19 +15,24 @@ const calculateTotal = async (items) => {
 
 exports.addToCart = async (req, res) => {
     try {
-        const { tableNumber, menuItemId, quantity, notes } = req.body;
-        if (!tableNumber || !menuItemId || !quantity) {
+        const { tableNumber: tableStr, menuItemId, quantity, notes, restaurantId } = req.body;
+        const tableNumber = parseInt(tableStr);
+
+        console.log(`Add to Cart: Table ${tableNumber}, Item ${menuItemId}, Restaurant ${restaurantId}`);
+
+        if (!tableNumber || !menuItemId || !quantity || !restaurantId) {
             return res.status(400).json({
                 success: false,
-                message: "Table Number, Menu Item, and Quantity Are Required"
+                message: "Missing Required Fields: tableNumber, menuItemId, quantity, or restaurantId"
             });
         }
 
-        //cart
-        let cart = await Cart.findOne({ tableNumber });
+        // Find or create cart for this table at this restaurant
+        let cart = await Cart.findOne({ tableNumber, restaurant: restaurantId });
         if (!cart) {
             cart = new Cart({
                 tableNumber,
+                restaurant: restaurantId,
                 items: []
             });
         }
@@ -54,37 +59,54 @@ exports.addToCart = async (req, res) => {
 
     }
 };
+
 exports.getCartByTable = async (req, res) => {
     try {
-        const { tableNumber } = req.params;
-        const cart = await Cart.findOne({ tableNumber })
+        const { tableNumber: tableStr } = req.params;
+        const { restaurantId } = req.query;
+        const tableNumber = parseInt(tableStr);
+
+        console.log(`Get Cart: Table ${tableNumber}, Restaurant ${restaurantId}`);
+
+        if (!restaurantId || isNaN(tableNumber)) {
+            return res.status(400).json({ success: false, message: "Restaurant ID and valid Table Number are required" });
+        }
+
+        const cart = await Cart.findOne({ tableNumber, restaurant: restaurantId })
             .populate("items.menuItem");
+
         if (!cart) {
-            return res.status(401).json({
-                success: false,
-                message: "Cart Not Found"
-            })
-        }
-        else {
-            res.status(200).json({
+            return res.status(200).json({
                 success: true,
-                data: cart
+                data: { tableNumber, restaurant: restaurantId, items: [], totalPrice: 0 }
             })
         }
+
+        res.status(200).json({
+            success: true,
+            data: cart
+        })
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         })
-
     }
 }
 
-//upadte quantity
+// update quantity
 exports.updateItemByCart = async (req, res) => {
     try {
-        const { tableNumber, menuItemId, quantity } = req.body;
-        const cart = await Cart.findOne({ tableNumber });
+        const { tableNumber: tableStr, menuItemId, quantity, restaurantId } = req.body;
+        const tableNumber = parseInt(tableStr);
+
+        console.log(`Update Cart: Table ${tableNumber}, Item ${menuItemId}, Qty ${quantity}`);
+
+        if (!restaurantId || isNaN(tableNumber)) {
+            return res.status(400).json({ success: false, message: "Restaurant ID and valid Table Number are required" });
+        }
+
+        const cart = await Cart.findOne({ tableNumber, restaurant: restaurantId });
 
         if (!cart) {
             return res.status(404).json({
@@ -110,19 +132,27 @@ exports.updateItemByCart = async (req, res) => {
             data: cart
         })
     } catch (error) {
-
         res.status(500).json({
             success: false,
             message: error.message
         })
     }
 };
+
 exports.removeItemFromCart = async (req, res) => {
     try {
-        const { tableNumber, menuItemId } = req.body;
-        const cart = await Cart.findOne({ tableNumber });
+        const { tableNumber: tableStr, menuItemId, restaurantId } = req.body;
+        const tableNumber = parseInt(tableStr);
+
+        console.log(`Remove from Cart: Table ${tableNumber}, Item ${menuItemId}`);
+
+        if (!restaurantId || isNaN(tableNumber)) {
+            return res.status(400).json({ success: false, message: "Restaurant ID and valid Table Number are required" });
+        }
+
+        const cart = await Cart.findOne({ tableNumber, restaurant: restaurantId });
         if (!cart) {
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
                 message: "Cart Not Found"
             })
@@ -142,14 +172,19 @@ exports.removeItemFromCart = async (req, res) => {
             success: false,
             message: error.message
         })
-
     }
 };
 
 exports.clearCart = async (req, res) => {
     try {
         const { tableNumber } = req.params;
-        const cart = await Cart.findOne({ tableNumber });
+        const { restaurantId } = req.query;
+
+        if (!restaurantId) {
+            return res.status(400).json({ success: false, message: "Restaurant ID is required" });
+        }
+
+        const cart = await Cart.findOne({ tableNumber, restaurant: restaurantId });
         if (!cart) {
             return res.status(401).json({
                 success: false,

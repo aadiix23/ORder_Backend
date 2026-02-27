@@ -14,11 +14,11 @@ const menuSchema = new mongoose.Schema({
         minLength: [15, "Minimum 15 Characters are Required"],
         maxLength: [500, "Maximum Characters Are 500"]
     },
-        category: {
-        type: String, 
+    category: {
+        type: String,
         required: [true, "Category is required (e.g., Starter, Main, Drink)"],
-        enum: ["Starter", "Main", "Dessert", "Drink", "Sides","Main Course"], 
-        index: true 
+        enum: ["Starter", "Main", "Dessert", "Drink", "Sides", "Main Course"],
+        index: true
     },
     price: {
         type: Number,
@@ -27,15 +27,21 @@ const menuSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        required: [true,"Image Upload Is Required"]
+        required: [true, "Image Upload Is Required"]
     },
     isAvailable: {
         type: Boolean,
         default: true
     },
-    attributes:{
-        isVeg:{type:Boolean,default:false},
-        isSpicy:{type:Boolean,default:false}
+    attributes: {
+        isVeg: { type: Boolean, default: false },
+        isSpicy: { type: Boolean, default: false }
+    },
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Restaurant",
+        required: [true, "Restaurant reference is required"],
+        index: true
     }
 }, {
     timestamps: true

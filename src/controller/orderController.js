@@ -4,156 +4,166 @@ const Order = require("../models/order/orderSchema")
 
 //place Order
 
-exports.placeOrder = async(req,res)=>{
+exports.placeOrder = async (req, res) => {
     try {
-        const {tableNumber} = req.body;
+        const { tableNumber: tableStr, restaurantId } = req.body;
+        const tableNumber = parseInt(tableStr);
 
-        if(!tableNumber){
+        console.log(`Place Order: Table ${tableNumber}, Restaurant ${restaurantId}`);
+
+        if (isNaN(tableNumber) || !restaurantId) {
             return res.status(400).json({
-                success:false,
-                message:"Table Number Is Required"
+                success: false,
+                message: "Valid Table Number and Restaurant ID are Required"
             })
         }
 
-        const cart = await Cart.findOne({tableNumber});
+        const cart = await Cart.findOne({ tableNumber, restaurant: restaurantId });
 
-        if(!cart || cart.items.length===0){
+        if (!cart || cart.items.length === 0) {
             return res.status(400).json({
-                success:false,
-                message:"Cart Is Empty"
+                success: false,
+                message: "Cart Is Empty"
             })
         };
 
         const orderItems = await Promise.all(
-            cart.items.map(async(item)=>{
+            cart.items.map(async (item) => {
                 const menuItem = await Menu.findById(item.menuItem);
 
-                if(!menuItem){
-                    throw new Error("Menu Item Is Not Found"); // 🔥 FIXED error typo
+                if (!menuItem) {
+                    throw new Error("Menu Item Is Not Found");
                 };
 
-                return{
-                    menuItem:item.menuItem,
-                    quantity:item.quantity,
-                    notes:item.notes,
-                    priceAtOrderTime:menuItem.price
+                return {
+                    menuItem: item.menuItem,
+                    quantity: item.quantity,
+                    notes: item.notes,
+                    priceAtOrderTime: menuItem.price
                 }
             })
         )
 
         const order = await Order.create({
             tableNumber,
-            items:orderItems,
-            totalPrice:cart.totalPrice
+            restaurant: restaurantId,
+            items: orderItems,
+            totalPrice: cart.totalPrice
         });
 
-        // 🔥 SOCKET CHANGE 1: Emit new order to admin/kitchen
+        // 🔥 SOCKET CHANGE 1: Emit new order to Specific Restaurant Admin
         const io = req.app.get("io");
-        io.to("admin_room").emit("new_order", order);
+        io.to(`admin_room_${restaurantId}`).emit("new_order", order);
 
         //clear cart after order
-        cart.items=[];
-        cart.totalPrice=0;
+        cart.items = [];
+        cart.totalPrice = 0;
         await cart.save();
 
         res.status(201).json({
-            success:true,
-            message:"Order Placed Sucessfully",
-            data:order
+            success: true,
+            message: "Order Placed Sucessfully",
+            data: order
         })
 
     } catch (error) {
         res.status(500).json({
-            success:false,
-            message:error.message
+            success: false,
+            message: error.message
         })
     }
 }
 
 //All Orders For Admin
-exports.getAllOrder = async(req,res)=>{
+exports.getAllOrder = async (req, res) => {
     try {
+        const restaurantId = req.user.restaurant;
+        const orders = await Order.find({ restaurant: restaurantId })
+            .populate("items.menuItem")
+            .sort({ createdAt: -1 })
 
-        const orders = await Order.find()
-        .populate("items.menuItem")
-        .sort({createdAt:-1})
-
-        return res.status(201).json({
-            success:true,
-            count:orders.length,
-            data:orders
+        return res.status(200).json({
+            success: true,
+            count: orders.length,
+            data: orders
         })
 
     } catch (error) {
         res.status(500).json({
-            success:false,
-            message:error.message
+            success: false,
+            message: error.message
         })
     }
 }
 
 //get order by table
-exports.getOrderByTable  = async(req,res)=>{
+exports.getOrderByTable = async (req, res) => {
     try {
+        const { tableNumber } = req.params;
+        const { restaurantId } = req.query;
 
-        const {tableNumber}=req.params;
+        if (!restaurantId) {
+            return res.status(400).json({ success: false, message: "Restaurant ID is required" });
+        }
 
-        const orders = await Order.find({tableNumber})
-        .populate("items.menuItem")
-        .sort({createdAt:-1})
+        const orders = await Order.find({ tableNumber, restaurant: restaurantId })
+            .populate("items.menuItem")
+            .sort({ createdAt: -1 })
 
-        res.status(201).json({
-            success:true,
-            count:orders.length,
-            data:orders
+        res.status(200).json({
+            success: true,
+            count: orders.length,
+            data: orders
         })
 
     } catch (error) {
         res.status(500).json({
-            success:false,
-            message:error.message
+            success: false,
+            message: error.message
         })
     }
 }
 
 //Update Order Status
 
-exports.updateOrderStatus = async(req,res)=>{
+exports.updateOrderStatus = async (req, res) => {
     try {
+        const { status } = req.body;
+        const allowedStatus = ["Pending", "Preparing", "Ready", "Served", "Completed"];
 
-         const {status}= req.body;
-
-         const allowedStatus = ["Pending", "Preparing", "Ready", "Served", "Completed"];
-
-         if(!allowedStatus.includes(status)){
+        if (!allowedStatus.includes(status)) {
             return res.status(400).json({
-                success:false,
-                message:"Status Is Not Valid"
+                success: false,
+                message: "Status Is Not Valid"
             })
-         }
+        }
 
-         const order = await Order.findById(req.params.id);
+        const order = await Order.findOne({
+            _id: req.params.id,
+            restaurant: req.user.restaurant
+        });
 
-         if(!order){
+        if (!order) {
             return res.status(404).json({
-                success:false,
-                message:"Order Not Found"
+                success: false,
+                message: "Order Not Found or Unauthorized"
             })
-         }
+        }
 
-         order.status=status;
-         await order.save();
+        order.status = status;
+        await order.save();
 
-         const io = req.app.get("io");
+        const io = req.app.get("io");
 
-         io.to(`table_${order.tableNumber}`)
-           .emit("order_status_updated", order);
+        // Room should be restaurant-scoped
+        io.to(`table_${order.tableNumber}_${order.restaurant}`)
+            .emit("order_status_updated", order);
 
-         res.status(200).json({
-            success:true,
-            message:"Order Status Updated Sucessfully",
-            data:order
-         })
+        res.status(200).json({
+            success: true,
+            message: "Order Status Updated Sucessfully",
+            data: order
+        })
 
     } catch (error) {
         res.status(500).json({

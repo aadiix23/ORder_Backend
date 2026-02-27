@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["admin", "chef"],
       required: true
+    },
+    restaurant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      index: true
     }
   },
   { timestamps: true }

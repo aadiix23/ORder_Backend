@@ -1,43 +1,55 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ShoppingBag, ArrowLeft, Loader2, Minus, Plus } from 'lucide-react';
-import { cartApi } from '../api/api';
+import { Trash2, ShoppingBag, ArrowLeft, Loader2, Minus, Plus, CreditCard, UtensilsCrossed, CheckCircle } from 'lucide-react';
+import { cartApi, orderApi } from '../api/api';
 
 const Cart = () => {
     const { tableNumber } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const restaurantId = queryParams.get('restaurantId');
+
     const [cart, setCart] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [placingOrder, setPlacingOrder] = useState(false);
+    const [orderSuccess, setOrderSuccess] = useState(false);
 
     useEffect(() => {
-        fetchCart();
-    }, [tableNumber]);
+        if (restaurantId) fetchCart();
+    }, [tableNumber, restaurantId]);
 
     const fetchCart = async () => {
+        if (!restaurantId || !tableNumber) return;
         setLoading(true);
+        console.log("Fetching Cart for TrayReview:", tableNumber, restaurantId);
         try {
-            const res = await cartApi.get(tableNumber);
+            const res = await cartApi.get(tableNumber, restaurantId);
+            console.log("Cart fetched:", res.data.data);
             setCart(res.data.data);
         } catch (err) {
-            console.error(err);
+            console.error("Cart fetch error:", err);
             setCart(null);
         } finally {
             setLoading(false);
         }
     };
 
-    const updateQuantity = async (menuItemId, newQty) => {
+    const updateQuantity = async (menuItemId, currentQty, delta) => {
+        const newQty = currentQty + delta;
         if (newQty < 1) return;
         try {
             await cartApi.update({
                 tableNumber: parseInt(tableNumber),
+                restaurantId,
                 menuItemId,
                 quantity: newQty
             });
             fetchCart();
         } catch (err) {
-            alert('Error updating quantity');
+            console.error('Update Qty Error:', err);
         }
     };
 
@@ -45,109 +57,185 @@ const Cart = () => {
         try {
             await cartApi.remove({
                 tableNumber: parseInt(tableNumber),
+                restaurantId,
                 menuItemId
             });
             fetchCart();
         } catch (err) {
-            alert('Error removing item');
+            console.error('Remove Item Error:', err);
         }
     };
 
-    const clearCart = async () => {
-        if (!window.confirm('Clear all items from your cart?')) return;
+    const handlePlaceOrder = async () => {
+        if (!restaurantId || !tableNumber) {
+            alert('Missing context. Please scan the QR code again.');
+            return;
+        }
+
+        const tableInt = parseInt(tableNumber);
+        if (isNaN(tableInt)) {
+            alert('Invalid table number.');
+            return;
+        }
+
+        setPlacingOrder(true);
         try {
-            await cartApi.clear(tableNumber);
-            setCart(null);
+            await orderApi.place({
+                tableNumber: tableInt,
+                restaurantId
+            });
+            setOrderSuccess(true);
+            setTimeout(() => {
+                navigate(`/menu/${tableNumber}?restaurantId=${restaurantId}`);
+            }, 3000);
         } catch (err) {
-            alert('Error clearing cart');
+            console.error('Order Placement Error:', err);
+            alert(err.response?.data?.message || 'Error placing order. Please try again.');
+        } finally {
+            setPlacingOrder(false);
         }
     };
 
     if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+        <div className="db-panel db-state" style={{ height: '100vh', background: 'var(--bg-dark)' }}>
             <Loader2 size={48} className="animate-spin" color="var(--primary)" />
+            <p>Loading your tray...</p>
+        </div>
+    );
+
+    if (orderSuccess) return (
+        <div className="db-panel db-state" style={{ height: '100vh', background: 'var(--bg-dark)' }}>
+            <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="glass"
+                style={{ padding: '60px', textAlign: 'center' }}
+            >
+                <div style={{ backgroundColor: '#22c55e', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                    <CheckCircle size={48} color="white" />
+                </div>
+                <h1 style={{ fontSize: '2rem', marginBottom: '10px' }}>Order Placed!</h1>
+                <p style={{ color: 'var(--text-muted)' }}>The chef is starting on your delicious meal.</p>
+                <div style={{ marginTop: '30px', color: '#fbbf24', fontWeight: 'bold' }}>
+                    Redirecting to menu...
+                </div>
+            </motion.div>
         </div>
     );
 
     return (
-        <div className="fade-in">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
-                <button onClick={() => navigate(-1)} className="btn btn-outline" style={{ padding: '8px' }}>
+        <div className="cart-page fade-in">
+            <nav className="cart-nav">
+                <div className="menu-nav-inner">
+                    <div className="menu-logo" onClick={() => navigate('/')}>
+                        <div className="menu-logo-icon">Q</div>
+                        <span>QRder</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(124, 58, 237, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
+                        <ShoppingBag size={14} color="#7c3aed" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Tray Review</span>
+                    </div>
+                </div>
+            </nav>
+
+            <header className="cart-header">
+                <button onClick={() => navigate(-1)} className="btn btn-outline" style={{ padding: '12px', minWidth: 'auto', borderRadius: '14px' }}>
                     <ArrowLeft size={24} />
                 </button>
-                <h1 style={{ fontSize: '2.5rem' }}>Your <span style={{ color: 'var(--primary)' }}>Order</span></h1>
-            </div>
+                <h1>Finalize <span>Order</span></h1>
+            </header>
 
             {!cart || cart.items.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '100px' }}>
-                    <ShoppingBag size={80} color="var(--glass-border)" style={{ marginBottom: '20px' }} />
-                    <h2 style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Your cart is empty</h2>
-                    <button onClick={() => navigate(`/menu/${tableNumber}`)} className="btn btn-primary" style={{ marginTop: '30px' }}>
+                <div className="glass" style={{ textAlign: 'center', padding: '100px 20px' }}>
+                    <ShoppingBag size={80} color="rgba(255,255,255,0.05)" style={{ marginBottom: '20px' }} />
+                    <h2 style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Your tray is empty</h2>
+                    <p style={{ marginTop: '10px', color: 'rgba(255,255,255,0.3)' }}>Add some delicious items from the menu to get started.</p>
+                    <button
+                        onClick={() => navigate(`/menu/${tableNumber}?restaurantId=${restaurantId}`)}
+                        className="btn btn-primary"
+                        style={{ marginTop: '40px', padding: '15px 40px' }}
+                    >
                         Browse Menu
                     </button>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '40px', alignItems: 'start' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div className="cart-container">
+                    <div className="cart-grid">
                         <AnimatePresence>
                             {cart.items.map(item => (
                                 <motion.div
                                     key={item.menuItem._id}
+                                    layout
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    className="glass"
-                                    style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="glass cart-card"
                                 >
-                                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                        <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold' }}>
-                                            {item.menuItem.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <h3 style={{ fontSize: '1.1rem' }}>{item.menuItem.name}</h3>
-                                            <p style={{ color: 'var(--primary)', fontWeight: '600' }}>${item.menuItem.price}</p>
-                                        </div>
-                                    </div>
+                                    {item.menuItem && (
+                                        <>
+                                            {item.menuItem.image ? (
+                                                <img src={item.menuItem.image} alt={item.menuItem.name} className="cart-item-img" />
+                                            ) : (
+                                                <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <UtensilsCrossed size={32} color="rgba(0,0,0,0.1)" />
+                                                </div>
+                                            )}
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(255,255,255,0.05)', padding: '5px 15px', borderRadius: '10px' }}>
-                                            <button onClick={() => updateQuantity(item._id, item.quantity - 1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Minus size={18} /></button>
-                                            <span style={{ fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                                            <button onClick={() => updateQuantity(item.menuItem._id, item.quantity + 1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Plus size={18} /></button>
-                                        </div>
-                                        <button onClick={() => removeItem(item.menuItem._id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
-                                            <Trash2 size={24} />
-                                        </button>
-                                    </div>
+                                            <div className="cart-item-info">
+                                                <h3>{item.menuItem.name}</h3>
+                                                <p>₹{item.menuItem.price}</p>
+                                            </div>
+
+                                            <div className="cart-qty-wrap">
+                                                <button className="qty-btn" onClick={() => updateQuantity(item.menuItem._id, item.quantity, -1)}>
+                                                    <Minus size={18} />
+                                                </button>
+                                                <span style={{ fontWeight: '800', minWidth: '20px', textAlign: 'center', color: '#1a1a2e' }}>{item.quantity}</span>
+                                                <button className="qty-btn" onClick={() => updateQuantity(item.menuItem._id, item.quantity, 1)}>
+                                                    <Plus size={18} />
+                                                </button>
+                                            </div>
+
+                                            <button className="cart-remove-btn" onClick={() => removeItem(item.menuItem._id)}>
+                                                <Trash2 size={20} />
+                                            </button>
+                                        </>
+                                    )}
                                 </motion.div>
                             ))}
                         </AnimatePresence>
-
-                        <button onClick={clearCart} style={{ alignSelf: 'start', color: '#ef4444', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '600', padding: '10px' }}>
-                            <Trash2 size={18} /> Clear Entire Cart
-                        </button>
                     </div>
 
-                    <div className="glass" style={{ padding: '30px', position: 'sticky', top: '120px' }}>
-                        <h2 style={{ fontSize: '1.5rem', marginBottom: '25px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px' }}>Summary</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-muted)' }}>Table</span>
-                                <span>#{tableNumber}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-muted)' }}>Items</span>
-                                <span>{cart.items.length}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.4rem', fontWeight: '700', marginTop: '10px' }}>
-                                <span>Total</span>
-                                <span style={{ color: 'var(--primary)' }}>${cart.totalPrice?.toFixed(2)}</span>
-                            </div>
+                    <footer className="cart-footer">
+                        <div className="summary-row">
+                            <span>Table Number</span>
+                            <span style={{ color: 'white', fontWeight: 'bold' }}>#{tableNumber}</span>
                         </div>
-                        <button className="btn btn-primary" style={{ width: '100%', fontSize: '1.1rem', padding: '15px' }}>
-                            Place Order
+                        <div className="summary-row">
+                            <span>Total Items</span>
+                            <span style={{ color: 'white', fontWeight: 'bold' }}>{cart.items.length}</span>
+                        </div>
+                        <div className="summary-total">
+                            <span>To Pay</span>
+                            <span style={{ color: '#fbbf24' }}>₹{cart.totalPrice?.toFixed(2)}</span>
+                        </div>
+
+                        <button
+                            className="btn btn-primary place-order-btn"
+                            onClick={handlePlaceOrder}
+                            disabled={placingOrder}
+                        >
+                            {placingOrder ? (
+                                <><Loader2 size={24} className="animate-spin" /> Processing...</>
+                            ) : (
+                                <><CreditCard size={24} /> Place Order</>
+                            )}
                         </button>
-                    </div>
+
+                        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>
+                            By placing this order, you agree to the restaurant's terms of service.
+                        </p>
+                    </footer>
                 </div>
             )}
         </div>

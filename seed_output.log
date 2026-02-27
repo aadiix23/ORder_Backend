@@ -1,0 +1,36 @@
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Connected to MongoDB...
+Seeding Restaurants...
+Seeding failed: ValidationError: Restaurant validation failed: owner: Path `owner` is required.
+    at Document.invalidate (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:3405:32)
+    at validatePath (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:3177:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Promise.all (index 0)
+    at async model.$__validate (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:3118:3)
+    at async model.validate (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:2687:5)
+    at async model.validateBeforeSavePreSave (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/plugins/validateBeforeSave.js:39:5)
+    at async Kareem.execPre (/home/aadiix/Projects/ORder_Backend/node_modules/kareem/index.js:70:24)
+    at async model.$__save (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/model.js:371:5)
+    at async model.save (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/model.js:614:5) {
+  errors: {
+    owner: ValidatorError: Path `owner` is required.
+        at SchemaObjectId.doValidate (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/schemaType.js:1425:13)
+        at validatePath (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:3169:24)
+        at model.$__validate (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:3115:21)
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async model.validate (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/document.js:2687:5)
+        at async model.validateBeforeSavePreSave (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/plugins/validateBeforeSave.js:39:5)
+        at async Kareem.execPre (/home/aadiix/Projects/ORder_Backend/node_modules/kareem/index.js:70:24)
+        at async model.$__save (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/model.js:371:5)
+        at async model.save (/home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/model.js:614:5)
+        at async /home/aadiix/Projects/ORder_Backend/node_modules/mongoose/lib/model.js:2750:9 {
+      properties: [Object],
+      kind: 'required',
+      path: 'owner',
+      value: undefined,
+      reason: undefined,
+      Symbol(mongoose#validatorError): true
+    }
+  },
+  _message: 'Restaurant validation failed'
+}
