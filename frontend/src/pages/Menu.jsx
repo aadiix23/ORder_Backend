@@ -36,7 +36,6 @@ const Menu = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('All');
     const [addingItemId, setAddingItemId] = useState(null);
-    const [isCartLoading, setIsCartLoading] = useState(false);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -82,7 +81,6 @@ const Menu = () => {
         });
 
         setAddingItemId(item._id);
-        setIsCartLoading(true);
 
         try {
             if (!tableNumber) {
@@ -108,8 +106,6 @@ const Menu = () => {
             const msg = err.response?.data?.message || err.message || "Something went wrong. Please try again.";
             alert(msg);
             setAddingItemId(null);
-        } finally {
-            setIsCartLoading(false);
         }
     };
 

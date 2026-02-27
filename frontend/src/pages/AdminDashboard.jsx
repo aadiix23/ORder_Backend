@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -22,13 +22,17 @@ import {
     QrCode
 } from 'lucide-react';
 import { orderApi, menuApi, uploadApi, restaurantApi } from '../api/api';
+import { io } from 'socket.io-client';
 
-const CATEGORIES = ['Starter', 'Main', 'Main Course', 'Dessert', 'Drink', 'Sides'];
+const CATEGORIES = ['Starter', 'Main Course', 'Dessert', 'Drink', 'Sides'];
 
 const getStatusClass = (status) => {
     const s = (status || 'Pending').toLowerCase();
     if (s === 'completed') return 'status-completed';
     if (s === 'cancelled') return 'status-cancelled';
+    if (s === 'preparing') return 'status-preparing';
+    if (s === 'ready') return 'status-ready';
+    if (s === 'served') return 'status-served';
     return 'status-pending';
 };
 
@@ -90,19 +94,9 @@ const OverviewTab = ({ orders, loading, error, stats, fetchOrders, updateOrderSt
                             <h3>Table #{order.tableNumber}</h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <select
-                                    className={`db-status-pill ${getStatusClass(order.status)}`}
+                                    className={`db-status-select ${getStatusClass(order.status)}`}
                                     value={order.status || 'Pending'}
                                     onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        border: 'none',
-                                        outline: 'none',
-                                        appearance: 'none',
-                                        padding: '4px 12px',
-                                        fontWeight: 'bold',
-                                        textTransform: 'uppercase',
-                                        fontSize: '0.75rem'
-                                    }}
                                 >
                                     {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
@@ -156,7 +150,6 @@ const MenuTab = () => {
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [dragActive, setDragActive] = useState(false);
-    const fileInputRef = useRef(null);
 
     // Retrieve restaurant ID
     const restaurantId = localStorage.getItem('restaurantId');
@@ -247,22 +240,8 @@ const MenuTab = () => {
         }
     };
 
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragActive(false);
-        const file = e.dataTransfer?.files?.[0];
-        handleImageUpload(file);
-    };
-
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        setDragActive(true);
-    };
-
-    const handleDragLeave = () => setDragActive(false);
-
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value, checked } = e.target;
         if (name === 'isVeg' || name === 'isSpicy') {
             setForm(prev => ({ ...prev, attributes: { ...prev.attributes, [name]: checked } }));
         } else if (name === 'isAvailable') {
@@ -830,6 +809,30 @@ const AdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const restaurantId = localStorage.getItem('restaurantId');
+        if (!restaurantId) return;
+
+        const socket = io('http://localhost:6001');
+
+        socket.on('connect', () => {
+            socket.emit('join_admin', restaurantId);
+        });
+
+        socket.on('new_order', () => {
+            fetchOrders();
+        });
+
+        socket.on('order_status_updated', () => {
+            fetchOrders();
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('token');

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { authApi } from '../api/api';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -26,22 +27,10 @@ const Register = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('http://localhost:6001/user/register', { // Using direct URL for reliability
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form)
-            });
-            const text = await res.text();
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch {
-                throw new Error('Server error. Please make sure the backend is running.');
-            }
-            if (!res.ok) throw new Error(data.message || 'Registration failed');
+            await authApi.register(form);
             navigate('/login');
         } catch (err) {
-            setError(err.message);
+            setError(err?.response?.data?.message || err.message || 'Registration failed');
         } finally {
             setLoading(false);
         }

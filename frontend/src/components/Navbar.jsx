@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, UtensilsCrossed, Home } from 'lucide-react';
 
 const Navbar = () => {

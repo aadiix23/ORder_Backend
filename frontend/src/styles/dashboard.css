@@ -301,6 +301,72 @@
   background: rgba(220, 38, 38, 0.1);
 }
 
+/* Status Interactive Select Dropdown */
+.db-status-select {
+  padding: 6px 28px 6px 14px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.db-status-select:hover {
+  filter: brightness(0.95);
+}
+
+.db-status-select.status-pending {
+  color: #7c3aed;
+  background-color: rgba(124, 58, 237, 0.12);
+}
+
+.db-status-select.status-completed {
+  color: #059669;
+  background-color: rgba(5, 150, 105, 0.12);
+}
+
+.db-status-select.status-cancelled {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.12);
+}
+
+/* Extra dynamic status colors */
+.db-status-select.status-preparing {
+  color: #d97706;
+  /* amber-600 */
+  background-color: rgba(217, 119, 6, 0.12);
+}
+
+.db-status-select.status-ready {
+  color: #2563eb;
+  /* blue-600 */
+  background-color: rgba(37, 99, 235, 0.12);
+}
+
+.db-status-select.status-served {
+  color: #0d9488;
+  /* teal-600 */
+  background-color: rgba(13, 148, 136, 0.12);
+}
+
+.db-status-select option {
+  background-color: #fff;
+  color: #1a1a2e;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: none;
+}
+
 .db-order-meta {
   color: #94a3b8;
   font-size: 0.82rem;

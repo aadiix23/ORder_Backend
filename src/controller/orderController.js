@@ -6,19 +6,19 @@ const Order = require("../models/order/orderSchema")
 
 exports.placeOrder = async (req, res) => {
     try {
-        const { tableNumber: tableStr, restaurantId } = req.body;
-        const tableNumber = parseInt(tableStr);
+        const { tableNumber, restaurantId } = req.body;
+        const normalizedTableNumber = String(tableNumber || "").trim();
 
-        console.log(`Place Order: Table ${tableNumber}, Restaurant ${restaurantId}`);
+        console.log(`Place Order: Table ${normalizedTableNumber}, Restaurant ${restaurantId}`);
 
-        if (isNaN(tableNumber) || !restaurantId) {
+        if (!normalizedTableNumber || !restaurantId) {
             return res.status(400).json({
                 success: false,
                 message: "Valid Table Number and Restaurant ID are Required"
             })
         }
 
-        const cart = await Cart.findOne({ tableNumber, restaurant: restaurantId });
+        const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
 
         if (!cart || cart.items.length === 0) {
             return res.status(400).json({
@@ -45,7 +45,7 @@ exports.placeOrder = async (req, res) => {
         )
 
         const order = await Order.create({
-            tableNumber,
+            tableNumber: normalizedTableNumber,
             restaurant: restaurantId,
             items: orderItems,
             totalPrice: cart.totalPrice
@@ -53,6 +53,7 @@ exports.placeOrder = async (req, res) => {
 
         // 🔥 SOCKET CHANGE 1: Emit new order to Specific Restaurant Admin
         const io = req.app.get("io");
+        io.to("admin_room").emit("new_order", order);
         io.to(`admin_room_${restaurantId}`).emit("new_order", order);
 
         //clear cart after order
@@ -155,7 +156,9 @@ exports.updateOrderStatus = async (req, res) => {
 
         const io = req.app.get("io");
 
-        // Room should be restaurant-scoped
+        // Emit to both legacy and restaurant-scoped rooms.
+        io.to(`table_${order.tableNumber}`)
+            .emit("order_status_updated", order);
         io.to(`table_${order.tableNumber}_${order.restaurant}`)
             .emit("order_status_updated", order);
 

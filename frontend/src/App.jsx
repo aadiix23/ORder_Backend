@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,7 +19,6 @@ function AppContent() {
   const location = useLocation();
   const isPublic = publicPaths.includes(location.pathname);
   const isDashboard = location.pathname.startsWith('/dashboard');
-  const isDarkPage = location.pathname.startsWith('/menu') || location.pathname.startsWith('/cart');
 
   return (
     <div className="app">

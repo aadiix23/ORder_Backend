@@ -26,6 +26,11 @@ export const restaurantApi = {
     getBySlug: (slug) => api.get(`/restaurant/slug/${slug}`),
 };
 
+export const authApi = {
+    login: (data) => api.post('/user/login', data),
+    register: (data) => api.post('/user/register', data),
+};
+
 export const cartApi = {
     get: (tableNumber, restaurantId) => api.get(`/cart/${tableNumber}?restaurantId=${restaurantId}`),
     add: (data) => api.post('/cart/add', data),

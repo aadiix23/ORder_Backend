@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogIn, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { authApi } from '../api/api';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -20,19 +21,7 @@ const Login = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('/api/user/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form)
-            });
-            const text = await res.text();
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch {
-                throw new Error('Server error. Please make sure the backend is running.');
-            }
-            if (!res.ok) throw new Error(data.message || 'Login failed');
+            const { data } = await authApi.login(form);
 
             if (!data.restaurantId && data.role !== 'staff') { // Allow login without restaurant only for specific global roles if any
                 throw new Error('This account is not linked to any restaurant. Please use a valid restaurant admin account.');
@@ -43,7 +32,7 @@ const Login = () => {
             localStorage.setItem('restaurantId', data.restaurantId || '');
             navigate('/dashboard');
         } catch (err) {
-            setError(err.message);
+            setError(err?.response?.data?.message || err.message || 'Login failed');
         } finally {
             setLoading(false);
         }

@@ -208,11 +208,11 @@ const Cart = () => {
                     <footer className="cart-footer">
                         <div className="summary-row">
                             <span>Table Number</span>
-                            <span style={{ color: 'white', fontWeight: 'bold' }}>#{tableNumber}</span>
+                            <span style={{ color: '#1a1a2e', fontWeight: 'bold' }}>#{tableNumber}</span>
                         </div>
                         <div className="summary-row">
                             <span>Total Items</span>
-                            <span style={{ color: 'white', fontWeight: 'bold' }}>{cart.items.length}</span>
+                            <span style={{ color: '#1a1a2e', fontWeight: 'bold' }}>{cart.items.length}</span>
                         </div>
                         <div className="summary-total">
                             <span>To Pay</span>
