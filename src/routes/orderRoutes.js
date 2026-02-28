@@ -5,11 +5,13 @@ const {
     placeOrder,
     getAllOrder,
     getOrderByTable,
-    updateOrderStatus
+    updateOrderStatus,
+    getOrderHistoryByPhone
 } = require("../controller/orderController");
 const { auth, onlyStaff } = require("../middlewares/auth");
 
-router.post("/place",placeOrder);
+router.post("/place", placeOrder);
+router.get("/history/:phone", getOrderHistoryByPhone);
 router.get("/", auth, onlyStaff, getAllOrder);
 router.get("/table/:tableNumber", getOrderByTable);
 router.put("/:id/status", auth, onlyStaff, updateOrderStatus);

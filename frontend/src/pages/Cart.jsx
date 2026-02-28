@@ -16,6 +16,15 @@ const Cart = () => {
     const [loading, setLoading] = useState(true);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
+    const [customerName, setCustomerName] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
+
+    useEffect(() => {
+        const storedName = localStorage.getItem('qrderCustomerName');
+        const storedPhone = localStorage.getItem('qrderCustomerPhone');
+        if (storedName) setCustomerName(storedName);
+        if (storedPhone) setCustomerPhone(storedPhone);
+    }, []);
 
     useEffect(() => {
         if (restaurantId) fetchCart();
@@ -81,8 +90,14 @@ const Cart = () => {
         try {
             await orderApi.place({
                 tableNumber: tableNumber,
-                restaurantId
+                restaurantId,
+                customerName: customerName || null,
+                customerPhone: customerPhone || null
             });
+
+            if (customerName) localStorage.setItem('qrderCustomerName', customerName);
+            if (customerPhone) localStorage.setItem('qrderCustomerPhone', customerPhone);
+
             setOrderSuccess(true);
             setTimeout(() => {
                 navigate(`/menu/${tableNumber}?restaurantId=${restaurantId}`);
@@ -217,6 +232,23 @@ const Cart = () => {
                         <div className="summary-total">
                             <span>To Pay</span>
                             <span style={{ color: '#fbbf24' }}>₹{cart.totalPrice?.toFixed(2)}</span>
+                        </div>
+
+                        <div className="checkout-inputs" style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <input
+                                type="text"
+                                placeholder="Your Name (Optional)"
+                                value={customerName}
+                                onChange={(e) => setCustomerName(e.target.value)}
+                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '1rem', outline: 'none' }}
+                            />
+                            <input
+                                type="tel"
+                                placeholder="Phone Number (For Re-Ordering)"
+                                value={customerPhone}
+                                onChange={(e) => setCustomerPhone(e.target.value)}
+                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '1rem', outline: 'none' }}
+                            />
                         </div>
 
                         <button

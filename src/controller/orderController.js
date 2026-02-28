@@ -6,7 +6,7 @@ const Order = require("../models/order/orderSchema")
 
 exports.placeOrder = async (req, res) => {
     try {
-        const { tableNumber, restaurantId } = req.body;
+        const { tableNumber, restaurantId, customerPhone, customerName } = req.body;
         const normalizedTableNumber = String(tableNumber || "").trim();
 
         console.log(`Place Order: Table ${normalizedTableNumber}, Restaurant ${restaurantId}`);
@@ -46,6 +46,8 @@ exports.placeOrder = async (req, res) => {
 
         const order = await Order.create({
             tableNumber: normalizedTableNumber,
+            customerPhone: customerPhone || null,
+            customerName: customerName || null,
             restaurant: restaurantId,
             items: orderItems,
             totalPrice: cart.totalPrice
@@ -167,6 +169,33 @@ exports.updateOrderStatus = async (req, res) => {
             message: "Order Status Updated Sucessfully",
             data: order
         })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+//Get Order History By Phone
+exports.getOrderHistoryByPhone = async (req, res) => {
+    try {
+        const { phone } = req.params;
+        const { restaurantId } = req.query;
+
+        if (!restaurantId || !phone) {
+            return res.status(400).json({ success: false, message: "Valid Phone and Restaurant ID are required" });
+        }
+
+        const orders = await Order.find({ customerPhone: phone, restaurant: restaurantId })
+            .populate("items.menuItem")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: orders
+        });
 
     } catch (error) {
         res.status(500).json({

@@ -67,11 +67,23 @@ exports.addToCart = async (req, res) => {
             message: "Item Added To Cart"
         })
     } catch (error) {
+        // Auto-heal legacy database index error
+        if (error.code === 11000 && error.message.includes('tableNumber_1')) {
+            console.log("Auto-healing: Dropping legacy tableNumber_1 index...");
+            const mongoose = require("mongoose");
+            try {
+                await mongoose.connection.collection('carts').dropIndex('tableNumber_1');
+                console.log("Legacy index dropped, retrying add to cart...");
+                return exports.addToCart(req, res);
+            } catch (dropError) {
+                console.error("Failed to auto-heal index", dropError);
+            }
+        }
+
         res.status(500).json({
             success: false,
             message: error.message
-        })
-
+        });
     }
 };
 

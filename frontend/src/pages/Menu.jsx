@@ -13,7 +13,8 @@ import {
     AlertTriangle,
     Clock,
     Star,
-    ChevronRight
+    ChevronRight,
+    History
 } from 'lucide-react';
 import { menuApi, cartApi, restaurantApi } from '../api/api';
 
@@ -177,6 +178,26 @@ const Menu = () => {
                         >
                             <ShoppingCart size={18} />
                             <span style={{ fontWeight: 800 }}>{cartItems.length}</span>
+                        </div>
+                        <div
+                            onClick={() => navigate(`/history/${tableNumber}?restaurantId=${restaurantId}`)}
+                            style={{
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                padding: '8px 16px',
+                                borderRadius: '12px',
+                                color: '#d97706',
+                                border: '1px solid rgba(245, 158, 11, 0.2)',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                        >
+                            <History size={18} />
+                            <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>History</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(124, 58, 237, 0.08)', padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(124, 58, 237, 0.1)' }}>
                             <ShoppingBag size={16} color="#7c3aed" />

@@ -44,6 +44,7 @@ export const orderApi = {
     place: (data) => api.post('/order/place', data),
     getByTable: (tableNumber, restaurantId) => api.get(`/order/table/${tableNumber}?restaurantId=${restaurantId}`),
     updateStatus: (id, status) => api.put(`/order/${id}/status`, { status }, { headers: getAuthHeader() }),
+    getHistory: (phone, restaurantId) => api.get(`/order/history/${phone}?restaurantId=${restaurantId}`),
 };
 
 export const uploadApi = {

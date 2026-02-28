@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Menu from './pages/Menu';
 import Cart from './pages/Cart';
+import OrderHistory from './pages/OrderHistory';
 import AdminDashboard from './pages/AdminDashboard';
 import './styles/index.css';
 import './styles/landing.css';
@@ -36,6 +37,7 @@ function AppContent() {
         <Routes>
           <Route path="/menu/:tableNumber" element={<Menu />} />
           <Route path="/cart/:tableNumber" element={<Cart />} />
+          <Route path="/history/:tableNumber" element={<OrderHistory />} />
         </Routes>
       )}
     </div>

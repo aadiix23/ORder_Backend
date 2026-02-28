@@ -19,7 +19,6 @@ const cartItemSchema = new mongoose.Schema({
 const cartSchema = new mongoose.Schema({
     tableNumber: {
         type: String,
-        required: true
     },
     items: [cartItemSchema],
     restaurant: {
