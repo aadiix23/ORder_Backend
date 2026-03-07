@@ -18,8 +18,6 @@ import {
 } from 'lucide-react';
 import { menuApi, cartApi, restaurantApi } from '../api/api';
 
-const CATEGORIES = ['All', 'Starter', 'Main Course', 'Dessert', 'Drink', 'Sides'];
-
 const Menu = () => {
     const { tableNumber } = useParams();
     const location = useLocation();
@@ -115,10 +113,19 @@ const Menu = () => {
         return menuItems.filter(item => {
             const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
             const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchQuery.toLowerCase());
+                item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (item.size || '').toLowerCase().includes(searchQuery.toLowerCase());
             return matchesCategory && matchesSearch;
         });
     }, [menuItems, activeCategory, searchQuery]);
+
+    const categories = useMemo(() => {
+        const dynamicCategories = menuItems
+            .map(item => item.category)
+            .filter(Boolean)
+            .map(c => c.trim());
+        return ['All', ...new Set(dynamicCategories)];
+    }, [menuItems]);
 
     const cartTotal = useMemo(() => {
         return cartItems.reduce((acc, curr) => acc + (curr.quantity * curr.menuItem.price), 0);
@@ -241,7 +248,7 @@ const Menu = () => {
 
                     {/* Category Scroll */}
                     <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
-                        {CATEGORIES.map(cat => (
+                        {categories.map(cat => (
                             <button
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
@@ -303,6 +310,9 @@ const Menu = () => {
                                         <h3 style={{ margin: '0', fontSize: '1.2rem', fontWeight: 700 }}>{item.name}</h3>
                                         <span style={{ color: '#7c3aed', fontWeight: 800, fontSize: '1.2rem' }}>₹{item.price}</span>
                                     </div>
+                                    <p style={{ margin: '0 0 10px', fontSize: '0.78rem', fontWeight: 700, color: '#7c3aed' }}>
+                                        Size: {item.size || 'Regular'}
+                                    </p>
                                     <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '24px', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '40px' }}>
                                         {item.description}
                                     </p>

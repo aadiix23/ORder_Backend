@@ -6,9 +6,55 @@ exports.createMenuItem = async (req, res) => {
         if (!restaurantId) {
             return res.status(400).json({ success: false, message: "Restaurant reference is required" });
         }
-        const payload = { ...req.body, restaurant: restaurantId };
+        const { sizes, sizePrices, ...rest } = req.body;
+        const payload = { ...rest, restaurant: restaurantId };
+
+        if (sizePrices && typeof sizePrices === "object" && !Array.isArray(sizePrices)) {
+            const allowedSizes = ["Small", "Medium", "Large", "Regular"];
+            const entries = Object.entries(sizePrices).filter(([size]) => allowedSizes.includes(size));
+
+            if (entries.length === 0) {
+                return res.status(400).json({ success: false, message: "No valid size-price pairs were provided" });
+            }
+
+            const docs = [];
+            for (const [size, rawPrice] of entries) {
+                const parsedPrice = Number(rawPrice);
+                if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+                    return res.status(400).json({ success: false, message: `Invalid price for size ${size}` });
+                }
+                docs.push({ ...payload, size, price: parsedPrice });
+            }
+
+            const createdItems = await Menu.insertMany(docs);
+            return res.status(201).json({
+                success: true,
+                message: `${createdItems.length} menu item(s) created successfully`,
+                count: createdItems.length,
+                data: createdItems
+            });
+        }
+
+        if (Array.isArray(sizes) && sizes.length > 0) {
+            const allowedSizes = ["Small", "Medium", "Large", "Regular"];
+            const normalizedSizes = [...new Set(sizes)].filter(size => allowedSizes.includes(size));
+
+            if (normalizedSizes.length === 0) {
+                return res.status(400).json({ success: false, message: "No valid sizes were provided" });
+            }
+
+            const docs = normalizedSizes.map(size => ({ ...payload, size }));
+            const createdItems = await Menu.insertMany(docs);
+            return res.status(201).json({
+                success: true,
+                message: `${createdItems.length} menu item(s) created successfully`,
+                count: createdItems.length,
+                data: createdItems
+            });
+        }
+
         const menuItem = await Menu.create(payload);
-        res.status(201).json({ success: true, message: "Item Created successfully" })
+        res.status(201).json({ success: true, message: "Item Created successfully", data: menuItem })
     } catch (error) {
         res.status(400).json({ success: false, message: error.message })
     }

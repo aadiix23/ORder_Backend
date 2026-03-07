@@ -16,9 +16,16 @@ const menuSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        required: [true, "Category is required (e.g., Starter, Main Course, Drink)"],
-        enum: ["Starter", "Main Course", "Dessert", "Drink", "Sides"],
+        required: [true, "Category is required"],
+        trim: true,
+        minLength: [2, "Minimum 2 characters are required for category"],
+        maxLength: [100, "Category can't be more than 100 characters"],
         index: true
+    },
+    size: {
+        type: String,
+        enum: ["Small", "Medium", "Large", "Regular"],
+        default: "Regular"
     },
     price: {
         type: Number,

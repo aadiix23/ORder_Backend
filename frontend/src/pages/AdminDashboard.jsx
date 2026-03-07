@@ -25,6 +25,10 @@ import { orderApi, menuApi, uploadApi, restaurantApi } from '../api/api';
 import { io } from 'socket.io-client';
 
 const CATEGORIES = ['Starter', 'Main Course', 'Dessert', 'Drink', 'Sides'];
+const SIZES = ['Regular', 'Small', 'Medium', 'Large'];
+const MULTI_SIZE_OPTIONS = ['Small', 'Medium', 'Large', 'Regular'];
+const MULTI_SIZES_VALUE = '__MULTI_SIZES__';
+const CUSTOM_CATEGORY_VALUE = '__CUSTOM_CATEGORY__';
 
 const getStatusClass = (status) => {
     const s = (status || 'Pending').toLowerCase();
@@ -130,6 +134,10 @@ const emptyForm = {
     name: '',
     description: '',
     category: 'Starter',
+    customCategory: '',
+    size: 'Regular',
+    selectedSizes: ['Small', 'Medium', 'Large'],
+    sizePrices: { Small: '', Medium: '', Large: '', Regular: '' },
     price: '',
     image: '',
     isAvailable: true,
@@ -179,9 +187,18 @@ const MenuTab = () => {
         return items.filter(i =>
             i.name?.toLowerCase().includes(q) ||
             i.category?.toLowerCase().includes(q) ||
+            i.size?.toLowerCase().includes(q) ||
             i.description?.toLowerCase().includes(q)
         );
     }, [items, searchTerm]);
+
+    const categoryOptions = useMemo(() => {
+        const fromItems = items
+            .map(i => i.category)
+            .filter(Boolean)
+            .map(c => c.trim());
+        return [...new Set([...CATEGORIES, ...fromItems])];
+    }, [items]);
 
     const openCreate = () => {
         setForm(emptyForm);
@@ -195,6 +212,8 @@ const MenuTab = () => {
             name: item.name || '',
             description: item.description || '',
             category: item.category || 'Starter',
+            customCategory: '',
+            size: item.size || 'Regular',
             price: item.price || '',
             image: item.image || '',
             isAvailable: item.isAvailable !== false,
@@ -263,17 +282,56 @@ const MenuTab = () => {
         }
 
         try {
+            const resolvedCategory = form.category === CUSTOM_CATEGORY_VALUE
+                ? form.customCategory?.trim()
+                : form.category?.trim();
+
+            if (!resolvedCategory || resolvedCategory.length < 2 || resolvedCategory.length > 100) {
+                setFormError('Please select a category or enter a custom category (2-100 chars).');
+                setSaving(false);
+                return;
+            }
+
             const payload = {
                 ...form,
+                category: resolvedCategory,
                 price: Number(form.price),
                 restaurant: restaurantId
             };
+            delete payload.selectedSizes;
+            delete payload.customCategory;
+
+            if (!editingId && form.size === MULTI_SIZES_VALUE) {
+                if (!Array.isArray(form.selectedSizes) || form.selectedSizes.length === 0) {
+                    setFormError('Select at least one size.');
+                    setSaving(false);
+                    return;
+                }
+
+                const sizePrices = {};
+                for (const size of form.selectedSizes) {
+                    const parsedPrice = Number(form.sizePrices?.[size]);
+                    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+                        setFormError(`Enter a valid price for ${size}.`);
+                        setSaving(false);
+                        return;
+                    }
+                    sizePrices[size] = parsedPrice;
+                }
+
+                payload.sizePrices = sizePrices;
+                delete payload.size;
+                delete payload.price;
+            } else {
+                delete payload.sizePrices;
+            }
+
             if (editingId) {
                 await menuApi.update(editingId, payload);
                 flash('Item updated successfully!');
             } else {
                 await menuApi.create(payload);
-                flash('Item created successfully!');
+                flash(form.size === MULTI_SIZES_VALUE ? 'Multi-size items created successfully!' : 'Item created successfully!');
             }
             closeForm();
             fetchMenu();
@@ -298,6 +356,21 @@ const MenuTab = () => {
     const flash = (msg) => {
         setSuccessMsg(msg);
         setTimeout(() => setSuccessMsg(''), 3000);
+    };
+
+    const isMultiSizeCreate = !editingId && form.size === MULTI_SIZES_VALUE;
+    const isCustomCategory = form.category === CUSTOM_CATEGORY_VALUE;
+
+    const toggleMultiSize = (size) => {
+        setForm(prev => {
+            const exists = prev.selectedSizes.includes(size);
+            return {
+                ...prev,
+                selectedSizes: exists
+                    ? prev.selectedSizes.filter(s => s !== size)
+                    : [...prev.selectedSizes, size]
+            };
+        });
     };
 
     return (
@@ -359,17 +432,78 @@ const MenuTab = () => {
                                 <div className="db-form-field">
                                     <label>Category</label>
                                     <select name="category" value={form.category} onChange={handleChange}>
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                                        <option value={CUSTOM_CATEGORY_VALUE}>+ Add Custom Category</option>
                                     </select>
+                                    {isCustomCategory && (
+                                        <input
+                                            name="customCategory"
+                                            value={form.customCategory}
+                                            onChange={handleChange}
+                                            required
+                                            minLength={2}
+                                            maxLength={100}
+                                            placeholder="Enter custom category"
+                                            style={{ marginTop: '8px' }}
+                                        />
+                                    )}
                                 </div>
                             </div>
+                            <div className="db-form-row">
+                                <div className="db-form-field">
+                                    <label>Size</label>
+                                    <select name="size" value={form.size} onChange={handleChange}>
+                                        {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                                        {!editingId && <option value={MULTI_SIZES_VALUE}>Multiple Sizes (Different Prices)</option>}
+                                    </select>
+                                </div>
+                                {!isMultiSizeCreate && (
+                                    <div className="db-form-field">
+                                        <label>Price (₹)</label>
+                                        <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required placeholder="0.00" />
+                                    </div>
+                                )}
+                            </div>
+                            {isMultiSizeCreate && (
+                                <div className="db-form-field">
+                                    <label>Size-wise Prices (₹)</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
+                                        {MULTI_SIZE_OPTIONS.map(size => {
+                                            const selected = form.selectedSizes.includes(size);
+                                            return (
+                                                <div key={size} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px', background: '#fff' }}>
+                                                    <label className="db-check-label" style={{ marginBottom: 8 }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selected}
+                                                            onChange={() => toggleMultiSize(size)}
+                                                        />
+                                                        <span>{size}</span>
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        placeholder={`Price for ${size}`}
+                                                        disabled={!selected}
+                                                        value={form.sizePrices?.[size] || ''}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setForm(prev => ({
+                                                                ...prev,
+                                                                sizePrices: { ...prev.sizePrices, [size]: value }
+                                                            }));
+                                                        }}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                             <div className="db-form-field">
                                 <label>Description</label>
                                 <textarea name="description" value={form.description} onChange={handleChange} required minLength={15} maxLength={500} rows={3} placeholder="Describe the dish (min 15 chars)" />
-                            </div>
-                            <div className="db-form-field">
-                                <label>Price (₹)</label>
-                                <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required placeholder="0.00" />
                             </div>
                             <div className="db-form-field">
                                 <label>Image</label>
@@ -483,6 +617,7 @@ const MenuTab = () => {
                                 <th>Image</th>
                                 <th>Name</th>
                                 <th>Category</th>
+                                <th>Size</th>
                                 <th>Price</th>
                                 <th>Status</th>
                                 <th>Tags</th>
@@ -500,6 +635,7 @@ const MenuTab = () => {
                                         <p className="db-menu-desc">{item.description?.slice(0, 60)}{item.description?.length > 60 ? '...' : ''}</p>
                                     </td>
                                     <td><span className="db-cat-pill">{item.category}</span></td>
+                                    <td><span className="db-cat-pill">{item.size || 'Regular'}</span></td>
                                     <td className="db-price">₹{Number(item.price).toFixed(2)}</td>
                                     <td>
                                         <span className={`db-avail-dot ${item.isAvailable !== false ? 'avail-yes' : 'avail-no'}`}>
