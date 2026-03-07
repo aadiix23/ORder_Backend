@@ -24,6 +24,8 @@ export const menuApi = {
 export const restaurantApi = {
     getById: (id) => api.get(`/restaurant/${id}`),
     getBySlug: (slug) => api.get(`/restaurant/slug/${slug}`),
+    getTableStatuses: (restaurantId) => api.get(`/restaurant/${restaurantId}/table-status`, { headers: getAuthHeader() }),
+    updateTableStatus: (restaurantId, data) => api.put(`/restaurant/${restaurantId}/table-status`, data, { headers: getAuthHeader() }),
 };
 
 export const authApi = {

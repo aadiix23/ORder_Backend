@@ -1,6 +1,22 @@
 const Cart = require("../models/cart/cartSchema")
 const Menu = require("../models/menu/menuSchema")
 const Order = require("../models/order/orderSchema")
+const Restaurant = require("../models/restaurant/restaurantSchema")
+
+const ensureTableIsActive = async (restaurantId, tableNumber) => {
+    const restaurant = await Restaurant.findById(restaurantId).select("tableStatuses");
+    if (!restaurant) {
+        return { ok: false, message: "Restaurant not found" };
+    }
+    const normalizedTable = String(tableNumber || "").trim();
+    const status = (restaurant.tableStatuses || []).find(
+        t => String(t.tableNumber || "").trim() === normalizedTable
+    );
+    if (status && status.isActive === false) {
+        return { ok: false, message: `Table ${normalizedTable} is currently OFF. Please contact staff.` };
+    }
+    return { ok: true };
+};
 
 //place Order
 
@@ -16,6 +32,11 @@ exports.placeOrder = async (req, res) => {
                 success: false,
                 message: "Valid Table Number and Restaurant ID are Required"
             })
+        }
+
+        const tableCheck = await ensureTableIsActive(restaurantId, normalizedTableNumber);
+        if (!tableCheck.ok) {
+            return res.status(403).json({ success: false, message: tableCheck.message });
         }
 
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });

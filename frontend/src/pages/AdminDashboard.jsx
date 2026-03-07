@@ -884,9 +884,64 @@ const QRTab = () => {
     const [startTable, setStartTable] = useState('');
     const [endTable, setEndTable] = useState('');
     const [bulkCodes, setBulkCodes] = useState([]);
+    const [tableControlNumber, setTableControlNumber] = useState('');
+    const [tableControlLoading, setTableControlLoading] = useState(false);
+    const [tableControlMsg, setTableControlMsg] = useState('');
+    const [tableStatuses, setTableStatuses] = useState([]);
+    const [tableStatusLoading, setTableStatusLoading] = useState(false);
 
     // Retrieve restaurantId
     const restaurantId = localStorage.getItem('restaurantId');
+
+    const fetchTableStatuses = async () => {
+        if (!restaurantId) return;
+        setTableStatusLoading(true);
+        try {
+            const res = await restaurantApi.getTableStatuses(restaurantId);
+            setTableStatuses(res?.data?.data || []);
+        } catch (err) {
+            setTableControlMsg(err?.response?.data?.message || 'Failed to load table statuses.');
+        } finally {
+            setTableStatusLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTableStatuses();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [restaurantId]);
+
+    const getTableStatus = (num) => {
+        const normalized = String(num || '').trim();
+        return tableStatuses.find(t => String(t.tableNumber || '').trim() === normalized);
+    };
+
+    const isTableActive = (num) => {
+        const status = getTableStatus(num);
+        return !status || status.isActive !== false;
+    };
+
+    const handleTableToggle = async (nextActive) => {
+        const normalized = String(tableControlNumber || '').trim();
+        if (!normalized) {
+            setTableControlMsg('Enter a table number first.');
+            return;
+        }
+        setTableControlLoading(true);
+        setTableControlMsg('');
+        try {
+            const res = await restaurantApi.updateTableStatus(restaurantId, {
+                tableNumber: normalized,
+                isActive: nextActive
+            });
+            setTableStatuses(res?.data?.data || []);
+            setTableControlMsg(res?.data?.message || `Table ${normalized} updated.`);
+        } catch (err) {
+            setTableControlMsg(err?.response?.data?.message || 'Failed to update table status.');
+        } finally {
+            setTableControlLoading(false);
+        }
+    };
 
     const qrUrl = tableNumber ? `${window.location.origin}/menu/${tableNumber}?restaurantId=${restaurantId}` : '';
     const qrImageSource = tableNumber ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrUrl)}` : '';
@@ -942,6 +997,64 @@ const QRTab = () => {
                 </button>
             </div>
 
+            <div className="db-panel no-print" style={{ padding: '20px', marginBottom: '24px' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '10px' }}>Table ON/OFF Control</h3>
+                <p style={{ marginTop: 0, color: '#64748b', fontSize: '0.9rem' }}>
+                    Turn table OFF to block new cart additions and order placements from that table.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div className="db-form-field" style={{ minWidth: '140px', marginBottom: 0 }}>
+                        <label>Table Number</label>
+                        <input
+                            type="number"
+                            placeholder="e.g. 5"
+                            value={tableControlNumber}
+                            onChange={(e) => setTableControlNumber(e.target.value)}
+                            className="db-search-input"
+                            style={{ paddingLeft: '14px' }}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        className="lp-btn-outline"
+                        onClick={() => handleTableToggle(true)}
+                        disabled={tableControlLoading}
+                    >
+                        Turn ON
+                    </button>
+                    <button
+                        type="button"
+                        className="lp-btn-primary"
+                        onClick={() => handleTableToggle(false)}
+                        disabled={tableControlLoading}
+                    >
+                        Turn OFF
+                    </button>
+                    <button
+                        type="button"
+                        className="lp-btn-outline"
+                        onClick={fetchTableStatuses}
+                        disabled={tableStatusLoading}
+                    >
+                        <RefreshCw size={14} /> Refresh
+                    </button>
+                </div>
+                {tableControlMsg && (
+                    <p style={{ margin: '10px 0 0', fontSize: '0.9rem', color: '#1d4ed8' }}>{tableControlMsg}</p>
+                )}
+                <div style={{ marginTop: '12px' }}>
+                    <strong style={{ fontSize: '0.9rem' }}>OFF Tables:</strong>{' '}
+                    {tableStatuses.filter(t => t.isActive === false).length === 0
+                        ? <span style={{ color: '#64748b' }}>None</span>
+                        : tableStatuses
+                            .filter(t => t.isActive === false)
+                            .sort((a, b) => Number(a.tableNumber) - Number(b.tableNumber))
+                            .map(t => `#${t.tableNumber}`)
+                            .join(', ')
+                    }
+                </div>
+            </div>
+
             {mode === 'single' ? (
                 <div className="db-panel db-state" style={{ padding: '40px', minHeight: 'auto' }}>
                     <div style={{ maxWidth: '400px', width: '100%', textAlign: 'left' }}>
@@ -975,7 +1088,9 @@ const QRTab = () => {
                                 />
                                 <div style={{ marginTop: '16px' }}>
                                     <h3 style={{ margin: 0, color: '#1a1a2e', fontSize: '1.2rem' }}>Table #{tableNumber}</h3>
-                                    <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>Scan to Order</p>
+                                    <p style={{ margin: '4px 0 0', color: isTableActive(tableNumber) ? '#94a3b8' : '#dc2626', fontSize: '0.85rem', fontWeight: 700 }}>
+                                        {isTableActive(tableNumber) ? 'Scan to Order' : 'Table OFF - Ordering Blocked'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -1059,7 +1174,9 @@ const QRTab = () => {
                                     />
                                     <div style={{ marginTop: '12px' }}>
                                         <h4 style={{ margin: 0, color: '#1a1a2e' }}>Table #{card.num}</h4>
-                                        <p style={{ margin: '2px 0 0', color: '#94a3b8', fontSize: '0.75rem' }}>Scan to Order</p>
+                                        <p style={{ margin: '2px 0 0', color: isTableActive(card.num) ? '#94a3b8' : '#dc2626', fontSize: '0.75rem', fontWeight: 700 }}>
+                                            {isTableActive(card.num) ? 'Scan to Order' : 'OFF'}
+                                        </p>
                                     </div>
                                 </div>
                             ))}

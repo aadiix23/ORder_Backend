@@ -1,5 +1,6 @@
 const Cart = require("../models/cart/cartSchema")
 const Menu = require("../models/menu/menuSchema")
+const Restaurant = require("../models/restaurant/restaurantSchema")
 
 const normalizeRequestedAddOns = (rawAddOns) => {
     if (!Array.isArray(rawAddOns)) return [];
@@ -48,6 +49,21 @@ const getCartLineSignature = (menuItemId, addOns = []) => {
     return `${menuItemId}::${normalizedAddOns}`;
 };
 
+const ensureTableIsActive = async (restaurantId, tableNumber) => {
+    const restaurant = await Restaurant.findById(restaurantId).select("tableStatuses");
+    if (!restaurant) {
+        return { ok: false, message: "Restaurant not found" };
+    }
+    const normalizedTable = String(tableNumber || "").trim();
+    const status = (restaurant.tableStatuses || []).find(
+        t => String(t.tableNumber || "").trim() === normalizedTable
+    );
+    if (status && status.isActive === false) {
+        return { ok: false, message: `Table ${normalizedTable} is currently OFF. Please contact staff.` };
+    }
+    return { ok: true };
+};
+
 //CALCULATE TOTAL PRICE
 const calculateTotal = async (items) => {
     if (!items.length) return 0;
@@ -81,6 +97,11 @@ exports.addToCart = async (req, res) => {
                 success: false,
                 message: "Valid tableNumber, menuItemId, quantity (>=1), and restaurantId are required"
             });
+        }
+
+        const tableCheck = await ensureTableIsActive(restaurantId, normalizedTableNumber);
+        if (!tableCheck.ok) {
+            return res.status(403).json({ success: false, message: tableCheck.message });
         }
 
         const menuItem = await Menu.findOne({ _id: menuItemId, restaurant: restaurantId, isAvailable: true }).select("_id addOns");

@@ -1,5 +1,21 @@
 const mongoose = require("mongoose");
 
+const tableStatusSchema = new mongoose.Schema({
+    tableNumber: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+}, { _id: false });
+
 const restaurantSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -32,6 +48,10 @@ const restaurantSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    tableStatuses: {
+        type: [tableStatusSchema],
+        default: []
     }
 }, { timestamps: true });
 
