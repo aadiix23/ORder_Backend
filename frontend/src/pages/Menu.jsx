@@ -46,6 +46,9 @@ const Menu = () => {
     const [activeTab, setActiveTab] = useState('home');
     const [selectedItem, setSelectedItem] = useState(null);
     const [detailQty, setDetailQty] = useState(1);
+    const [imageFrame, setImageFrame] = useState(0);
+    const [detailImageIndex, setDetailImageIndex] = useState(0);
+    const [touchStartX, setTouchStartX] = useState(null);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -70,6 +73,18 @@ const Menu = () => {
 
         initData();
     }, [restaurantId, tableNumber]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setImageFrame(prev => prev + 1);
+        }, 2500);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        setDetailImageIndex(0);
+        setTouchStartX(null);
+    }, [selectedItem?._id]);
 
     const refreshCart = async () => {
         if (!restaurantId || !tableNumber) return;
@@ -161,6 +176,22 @@ const Menu = () => {
     const getRating = (item) => {
         const hash = item.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
         return (4.0 + (hash % 10) / 10).toFixed(1);
+    };
+
+    const getItemImages = (item) => {
+        const images = Array.isArray(item?.images) ? item.images.filter(Boolean) : [];
+        if (images.length > 0) return images;
+        return item?.image ? [item.image] : [];
+    };
+
+    const goToNextDetailImage = (imagesLength) => {
+        if (!imagesLength || imagesLength <= 1) return;
+        setDetailImageIndex(prev => (prev + 1) % imagesLength);
+    };
+
+    const goToPrevDetailImage = (imagesLength) => {
+        if (!imagesLength || imagesLength <= 1) return;
+        setDetailImageIndex(prev => (prev - 1 + imagesLength) % imagesLength);
     };
 
     // Error Fallbacks
@@ -277,7 +308,8 @@ const Menu = () => {
                         </div>
                     ) : (
                         displayedItems.map((item, idx) => {
-                            const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
+                            const itemImages = getItemImages(item);
+                            const primaryImage = itemImages.length > 0 ? itemImages[imageFrame % itemImages.length] : null;
                             const rating = getRating(item);
                             const isAdding = addingItemId === item._id;
                             const hasAddOns = Array.isArray(item.addOns) && item.addOns.some(a => a?.isAvailable !== false);
@@ -344,7 +376,9 @@ const Menu = () => {
             <AnimatePresence>
                 {selectedItem && (() => {
                     const item = selectedItem;
-                    const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
+                    const itemImages = getItemImages(item);
+                    const safeIndex = Math.min(detailImageIndex, Math.max(itemImages.length - 1, 0));
+                    const primaryImage = itemImages.length > 0 ? itemImages[safeIndex] : null;
                     const hasAddOns = Array.isArray(item.addOns) && item.addOns.some(a => a?.isAvailable !== false);
                     const availableAddOns = (item.addOns || []).filter(a => a?.isAvailable !== false);
                     const isAdding = addingItemId === item._id;
@@ -376,13 +410,56 @@ const Menu = () => {
                             </div>
 
                             {/* Product Image */}
-                            <div className="pd-image-section">
+                            <div
+                                className="pd-image-section"
+                                style={{ position: 'relative' }}
+                                onTouchStart={(e) => setTouchStartX(e.changedTouches?.[0]?.clientX ?? null)}
+                                onTouchEnd={(e) => {
+                                    const endX = e.changedTouches?.[0]?.clientX;
+                                    if (touchStartX === null || typeof endX !== 'number') return;
+                                    const delta = endX - touchStartX;
+                                    if (Math.abs(delta) < 35) return;
+                                    if (delta < 0) goToNextDetailImage(itemImages.length);
+                                    else goToPrevDetailImage(itemImages.length);
+                                }}
+                            >
                                 {primaryImage ? (
                                     <img src={primaryImage} alt={item.name} />
                                 ) : (
                                     <div className="pd-image-placeholder">
                                         <UtensilsCrossed size={56} color="#ddd" />
                                     </div>
+                                )}
+                                {itemImages.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            aria-label="Previous image"
+                                            onClick={() => goToPrevDetailImage(itemImages.length)}
+                                            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '34px', height: '34px', borderRadius: '50%', border: 'none', background: 'rgba(15,23,42,0.65)', color: '#fff', cursor: 'pointer', zIndex: 3 }}
+                                        >
+                                            {'<'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label="Next image"
+                                            onClick={() => goToNextDetailImage(itemImages.length)}
+                                            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '34px', height: '34px', borderRadius: '50%', border: 'none', background: 'rgba(15,23,42,0.65)', color: '#fff', cursor: 'pointer', zIndex: 3 }}
+                                        >
+                                            {'>'}
+                                        </button>
+                                        <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px', zIndex: 3, padding: '4px 8px', borderRadius: '999px', background: 'rgba(15,23,42,0.35)' }}>
+                                            {itemImages.map((_, i) => (
+                                                <button
+                                                    key={`detail-dot-${i}`}
+                                                    type="button"
+                                                    aria-label={`Go to image ${i + 1}`}
+                                                    onClick={() => setDetailImageIndex(i)}
+                                                    style={{ width: '8px', height: '8px', borderRadius: '50%', border: i === safeIndex ? '1px solid #fff' : '1px solid rgba(255,255,255,0.6)', background: i === safeIndex ? '#ffffff' : 'rgba(255,255,255,0.45)', padding: 0, cursor: 'pointer' }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </>
                                 )}
                             </div>
 
