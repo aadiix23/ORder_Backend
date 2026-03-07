@@ -1,8 +1,20 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ShoppingBag, ArrowLeft, Loader2, Minus, Plus, CreditCard, UtensilsCrossed, CheckCircle } from 'lucide-react';
+import {
+    Trash2,
+    ShoppingBag,
+    ArrowLeft,
+    Loader2,
+    Minus,
+    Plus,
+    CheckCircle,
+    UtensilsCrossed,
+    Search,
+    Clock
+} from 'lucide-react';
 import { cartApi, orderApi } from '../api/api';
+import '../styles/cart.css';
 
 const Cart = () => {
     const { tableNumber } = useParams();
@@ -33,10 +45,8 @@ const Cart = () => {
     const fetchCart = async () => {
         if (!restaurantId || !tableNumber) return;
         setLoading(true);
-        console.log("Fetching Cart for TrayReview:", tableNumber, restaurantId);
         try {
             const res = await cartApi.get(tableNumber, restaurantId);
-            console.log("Cart fetched:", res.data.data);
             setCart(res.data.data);
         } catch (err) {
             console.error("Cart fetch error:", err);
@@ -51,7 +61,7 @@ const Cart = () => {
         if (newQty < 1) return;
         try {
             await cartApi.update({
-                tableNumber: tableNumber,
+                tableNumber,
                 restaurantId,
                 cartItemId,
                 menuItemId,
@@ -66,7 +76,7 @@ const Cart = () => {
     const removeItem = async (cartItemId, menuItemId) => {
         try {
             await cartApi.remove({
-                tableNumber: tableNumber,
+                tableNumber,
                 restaurantId,
                 cartItemId,
                 menuItemId
@@ -83,15 +93,10 @@ const Cart = () => {
             return;
         }
 
-        if (!tableNumber) {
-            alert('Invalid table number.');
-            return;
-        }
-
         setPlacingOrder(true);
         try {
             await orderApi.place({
-                tableNumber: tableNumber,
+                tableNumber,
                 restaurantId,
                 customerName: customerName || null,
                 customerPhone: customerPhone || null
@@ -112,171 +117,208 @@ const Cart = () => {
         }
     };
 
+    // Compute totals
+    const subtotal = cart?.items?.reduce((acc, item) => {
+        const base = Number(item?.menuItem?.price) || 0;
+        const addOnTotal = (item?.addOns || []).reduce((sum, a) => sum + (Number(a?.price) || 0), 0);
+        return acc + (item.quantity * (base + addOnTotal));
+    }, 0) || 0;
+
+    const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+
+    // Loading
     if (loading) return (
-        <div className="db-panel db-state" style={{ height: '100vh', background: 'var(--bg-dark)' }}>
-            <Loader2 size={48} className="animate-spin" color="var(--primary)" />
-            <p>Loading your tray...</p>
+        <div className="cart-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+            <div style={{ textAlign: 'center' }}>
+                <Loader2 size={42} className="animate-spin" color="#e63946" />
+                <p style={{ marginTop: '16px', color: '#999', fontWeight: 600 }}>Loading your order...</p>
+            </div>
         </div>
     );
 
+    // Order Success
     if (orderSuccess) return (
-        <div className="db-panel db-state" style={{ height: '100vh', background: 'var(--bg-dark)' }}>
+        <motion.div
+            className="order-success-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
             <motion.div
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="glass"
-                style={{ padding: '60px', textAlign: 'center' }}
+                className="success-check"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             >
-                <div style={{ backgroundColor: '#22c55e', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                    <CheckCircle size={48} color="white" />
-                </div>
-                <h1 style={{ fontSize: '2rem', marginBottom: '10px' }}>Order Placed!</h1>
-                <p style={{ color: 'var(--text-muted)' }}>The chef is starting on your delicious meal.</p>
-                <div style={{ marginTop: '30px', color: '#fbbf24', fontWeight: 'bold' }}>
-                    Redirecting to menu...
-                </div>
+                <CheckCircle size={48} color="white" />
             </motion.div>
-        </div>
+            <h1>Order Placed!</h1>
+            <p>The chef is starting on your delicious meal.</p>
+            <p>Table #{tableNumber}</p>
+            <div className="redirect-text">Redirecting to menu...</div>
+        </motion.div>
     );
 
     return (
-        <div className="cart-page fade-in">
-            <nav className="cart-nav">
-                <div className="menu-nav-inner">
-                    <div className="menu-logo" onClick={() => navigate('/')}>
-                        <div className="menu-logo-icon">Q</div>
-                        <span>QRder</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(124, 58, 237, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
-                        <ShoppingBag size={14} color="#7c3aed" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Tray Review</span>
-                    </div>
-                </div>
-            </nav>
-
-            <header className="cart-header">
-                <button onClick={() => navigate(-1)} className="btn btn-outline" style={{ padding: '12px', minWidth: 'auto', borderRadius: '14px' }}>
-                    <ArrowLeft size={24} />
+        <div className="cart-page">
+            {/* Top Bar */}
+            <div className="fg-topbar">
+                <button className="fg-back-btn" onClick={() => navigate(-1)}>
+                    <ArrowLeft size={20} />
                 </button>
-                <h1>Finalize <span>Order</span></h1>
-            </header>
+                <span className="fg-topbar-title">Your Cart</span>
+                <div className="fg-topbar-right">
+                    <ShoppingBag size={20} />
+                </div>
+            </div>
 
             {!cart || !cart?.items?.length ? (
-                <div className="glass" style={{ textAlign: 'center', padding: '100px 20px' }}>
-                    <ShoppingBag size={80} color="rgba(255,255,255,0.05)" style={{ marginBottom: '20px' }} />
-                    <h2 style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>Your tray is empty</h2>
-                    <p style={{ marginTop: '10px', color: 'rgba(255,255,255,0.3)' }}>Add some delicious items from the menu to get started.</p>
+                /* Empty Cart */
+                <div className="cart-empty-state">
+                    <div className="cart-empty-icon">
+                        <ShoppingBag size={40} color="#ddd" />
+                    </div>
+                    <h2>Your cart is empty</h2>
+                    <p>Add some delicious items from the menu to get started.</p>
                     <button
+                        className="cart-browse-btn"
                         onClick={() => navigate(`/menu/${tableNumber}?restaurantId=${restaurantId}`)}
-                        className="btn btn-primary"
-                        style={{ marginTop: '40px', padding: '15px 40px' }}
                     >
                         Browse Menu
                     </button>
                 </div>
             ) : (
-                <div className="cart-container">
-                    <div className="cart-grid">
+                <>
+                    {/* Cart Items */}
+                    <div className="cart-items-list">
                         <AnimatePresence>
-                            {cart.items.map(item => (
-                                <motion.div
-                                    key={item._id}
-                                    layout
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className="glass cart-card"
-                                >
-                                    {item.menuItem && (
-                                        <>
-                                            {((item.menuItem.images && item.menuItem.images[0]) || item.menuItem.image) ? (
-                                                <img src={(item.menuItem.images && item.menuItem.images[0]) || item.menuItem.image} alt={item.menuItem.name} className="cart-item-img" />
-                                            ) : (
-                                                <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <UtensilsCrossed size={32} color="rgba(0,0,0,0.1)" />
-                                                </div>
-                                            )}
+                            {cart.items.map(item => {
+                                const img = (item.menuItem?.images?.[0]) || item.menuItem?.image;
+                                const base = Number(item.menuItem?.price) || 0;
+                                const addOnTotal = (item.addOns || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+                                const lineTotal = item.quantity * (base + addOnTotal);
 
-                                            <div className="cart-item-info">
-                                                <h3>{item.menuItem.name}</h3>
-                                                <p>
-                                                    ₹{((Number(item.menuItem.price) || 0) + (item.addOns || []).reduce((sum, addOn) => sum + (Number(addOn.price) || 0), 0)).toFixed(2)}
-                                                </p>
-                                                {(item.addOns || []).length > 0 && (
-                                                    <p style={{ marginTop: '6px', fontSize: '0.8rem', color: '#64748b' }}>
-                                                        + {item.addOns.map(addOn => `${addOn.name} (₹${Number(addOn.price || 0).toFixed(2)})`).join(', ')}
-                                                    </p>
+                                return (
+                                    <motion.div
+                                        key={item._id}
+                                        layout
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="cart-item-card"
+                                    >
+                                        {item.menuItem && (
+                                            <>
+                                                {img ? (
+                                                    <img src={img} alt={item.menuItem.name} className="cart-item-img" />
+                                                ) : (
+                                                    <div className="cart-item-img-placeholder">
+                                                        <UtensilsCrossed size={24} color="#ddd" />
+                                                    </div>
                                                 )}
-                                            </div>
 
-                                            <div className="cart-qty-wrap">
-                                                <button className="qty-btn" onClick={() => updateQuantity(item._id, item.menuItem._id, item.quantity, -1)}>
-                                                    <Minus size={18} />
-                                                </button>
-                                                <span style={{ fontWeight: '800', minWidth: '20px', textAlign: 'center', color: '#1a1a2e' }}>{item.quantity}</span>
-                                                <button className="qty-btn" onClick={() => updateQuantity(item._id, item.menuItem._id, item.quantity, 1)}>
-                                                    <Plus size={18} />
-                                                </button>
-                                            </div>
+                                                <div className="cart-item-details">
+                                                    <p className="cart-item-name">{item.menuItem.name}</p>
+                                                    {(item.addOns || []).length > 0 && (
+                                                        <p className="cart-item-addons-text">
+                                                            + {item.addOns.map(a => a.name).join(', ')}
+                                                        </p>
+                                                    )}
+                                                    <p className="cart-item-price">₹{lineTotal.toFixed(0)}</p>
+                                                </div>
 
-                                            <button className="cart-remove-btn" onClick={() => removeItem(item._id, item.menuItem._id)}>
-                                                <Trash2 size={20} />
-                                            </button>
-                                        </>
-                                    )}
-                                </motion.div>
-                            ))}
+                                                <div className="cart-qty-controls">
+                                                    <button
+                                                        className="cart-qty-btn minus"
+                                                        onClick={() => updateQuantity(item._id, item.menuItem._id, item.quantity, -1)}
+                                                    >
+                                                        <Minus size={16} />
+                                                    </button>
+                                                    <span className="cart-qty-value">{item.quantity}</span>
+                                                    <button
+                                                        className="cart-qty-btn plus"
+                                                        onClick={() => updateQuantity(item._id, item.menuItem._id, item.quantity, 1)}
+                                                    >
+                                                        <Plus size={16} />
+                                                    </button>
+                                                </div>
+
+                                                <button
+                                                    className="cart-remove-btn"
+                                                    onClick={() => removeItem(item._id, item.menuItem._id)}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </>
+                                        )}
+                                    </motion.div>
+                                );
+                            })}
                         </AnimatePresence>
                     </div>
 
-                    <footer className="cart-footer">
-                        <div className="summary-row">
-                            <span>Table Number</span>
-                            <span style={{ color: '#1a1a2e', fontWeight: 'bold' }}>#{tableNumber}</span>
+                    {/* Order Summary */}
+                    <div className="order-summary">
+                        <h3>Order summary</h3>
+                        <div className="summary-line">
+                            <span className="label">Order ({totalItems} items)</span>
+                            <span className="value">₹{subtotal.toFixed(0)}</span>
                         </div>
-                        <div className="summary-row">
-                            <span>Total Items</span>
-                            <span style={{ color: '#1a1a2e', fontWeight: 'bold' }}>{cart.items.length}</span>
+                        <div className="summary-line">
+                            <span className="label">Table</span>
+                            <span className="value">#{tableNumber}</span>
                         </div>
-                        <div className="summary-total">
-                            <span>To Pay</span>
-                            <span style={{ color: '#fbbf24' }}>₹{cart.totalPrice?.toFixed(2)}</span>
+                        <hr className="summary-divider" />
+                        <div className="summary-total-line">
+                            <span className="label">Total:</span>
+                            <span className="value">₹{subtotal.toFixed(0)}</span>
                         </div>
+                        <div className="summary-delivery-time">
+                            <span>Estimated preparation:</span>
+                            <span>15 - 30 mins</span>
+                        </div>
+                    </div>
 
-                        <div className="checkout-inputs" style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input
-                                type="text"
-                                placeholder="Your Name (Optional)"
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '1rem', outline: 'none' }}
-                            />
-                            <input
-                                type="tel"
-                                placeholder="Phone Number (For Re-Ordering)"
-                                value={customerPhone}
-                                onChange={(e) => setCustomerPhone(e.target.value)}
-                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '1rem', outline: 'none' }}
-                            />
-                        </div>
+                    {/* Customer Info */}
+                    <div className="customer-info-section">
+                        <h3>Your details</h3>
+                        <input
+                            type="text"
+                            className="fg-input"
+                            placeholder="Your Name (Optional)"
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                        />
+                        <input
+                            type="tel"
+                            className="fg-input"
+                            placeholder="Phone Number (For Re-Ordering)"
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value)}
+                        />
+                    </div>
 
+                    {/* Spacer for bottom bar */}
+                    <div style={{ height: '100px' }} />
+
+                    {/* Bottom Order Bar */}
+                    <div className="cart-order-bar">
+                        <div className="cart-order-price">
+                            <div className="total-label">Total price</div>
+                            <div className="total-value">₹{subtotal.toFixed(0)}</div>
+                        </div>
                         <button
-                            className="btn btn-primary place-order-btn"
+                            className="cart-order-btn"
                             onClick={handlePlaceOrder}
                             disabled={placingOrder}
                         >
                             {placingOrder ? (
-                                <><Loader2 size={24} className="animate-spin" /> Processing...</>
+                                <><Loader2 size={20} className="animate-spin" /> Processing...</>
                             ) : (
-                                <><CreditCard size={24} /> Place Order</>
+                                'ORDER NOW'
                             )}
                         </button>
-
-                        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>
-                            By placing this order, you agree to the restaurant's terms of service.
-                        </p>
-                    </footer>
-                </div>
+                    </div>
+                </>
             )}
         </div>
     );

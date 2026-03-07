@@ -19,7 +19,8 @@ import {
     Check,
     Upload,
     ImagePlus,
-    QrCode
+    QrCode,
+    Power
 } from 'lucide-react';
 import { orderApi, menuApi, uploadApi, restaurantApi } from '../api/api';
 import { io } from 'socket.io-client';
@@ -884,26 +885,17 @@ const QRTab = () => {
     const [startTable, setStartTable] = useState('');
     const [endTable, setEndTable] = useState('');
     const [bulkCodes, setBulkCodes] = useState([]);
-    const [tableControlNumber, setTableControlNumber] = useState('');
-    const [tableControlLoading, setTableControlLoading] = useState(false);
-    const [tableControlMsg, setTableControlMsg] = useState('');
     const [tableStatuses, setTableStatuses] = useState([]);
-    const [tableStatusLoading, setTableStatusLoading] = useState(false);
 
     // Retrieve restaurantId
     const restaurantId = localStorage.getItem('restaurantId');
 
     const fetchTableStatuses = async () => {
         if (!restaurantId) return;
-        setTableStatusLoading(true);
         try {
             const res = await restaurantApi.getTableStatuses(restaurantId);
             setTableStatuses(res?.data?.data || []);
-        } catch (err) {
-            setTableControlMsg(err?.response?.data?.message || 'Failed to load table statuses.');
-        } finally {
-            setTableStatusLoading(false);
-        }
+        } catch (_err) { }
     };
 
     useEffect(() => {
@@ -919,28 +911,6 @@ const QRTab = () => {
     const isTableActive = (num) => {
         const status = getTableStatus(num);
         return !status || status.isActive !== false;
-    };
-
-    const handleTableToggle = async (nextActive) => {
-        const normalized = String(tableControlNumber || '').trim();
-        if (!normalized) {
-            setTableControlMsg('Enter a table number first.');
-            return;
-        }
-        setTableControlLoading(true);
-        setTableControlMsg('');
-        try {
-            const res = await restaurantApi.updateTableStatus(restaurantId, {
-                tableNumber: normalized,
-                isActive: nextActive
-            });
-            setTableStatuses(res?.data?.data || []);
-            setTableControlMsg(res?.data?.message || `Table ${normalized} updated.`);
-        } catch (err) {
-            setTableControlMsg(err?.response?.data?.message || 'Failed to update table status.');
-        } finally {
-            setTableControlLoading(false);
-        }
     };
 
     const qrUrl = tableNumber ? `${window.location.origin}/menu/${tableNumber}?restaurantId=${restaurantId}` : '';
@@ -995,64 +965,6 @@ const QRTab = () => {
                 >
                     Bulk Generate
                 </button>
-            </div>
-
-            <div className="db-panel no-print" style={{ padding: '20px', marginBottom: '24px' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '10px' }}>Table ON/OFF Control</h3>
-                <p style={{ marginTop: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                    Turn table OFF to block new cart additions and order placements from that table.
-                </p>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                    <div className="db-form-field" style={{ minWidth: '140px', marginBottom: 0 }}>
-                        <label>Table Number</label>
-                        <input
-                            type="number"
-                            placeholder="e.g. 5"
-                            value={tableControlNumber}
-                            onChange={(e) => setTableControlNumber(e.target.value)}
-                            className="db-search-input"
-                            style={{ paddingLeft: '14px' }}
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        className="lp-btn-outline"
-                        onClick={() => handleTableToggle(true)}
-                        disabled={tableControlLoading}
-                    >
-                        Turn ON
-                    </button>
-                    <button
-                        type="button"
-                        className="lp-btn-primary"
-                        onClick={() => handleTableToggle(false)}
-                        disabled={tableControlLoading}
-                    >
-                        Turn OFF
-                    </button>
-                    <button
-                        type="button"
-                        className="lp-btn-outline"
-                        onClick={fetchTableStatuses}
-                        disabled={tableStatusLoading}
-                    >
-                        <RefreshCw size={14} /> Refresh
-                    </button>
-                </div>
-                {tableControlMsg && (
-                    <p style={{ margin: '10px 0 0', fontSize: '0.9rem', color: '#1d4ed8' }}>{tableControlMsg}</p>
-                )}
-                <div style={{ marginTop: '12px' }}>
-                    <strong style={{ fontSize: '0.9rem' }}>OFF Tables:</strong>{' '}
-                    {tableStatuses.filter(t => t.isActive === false).length === 0
-                        ? <span style={{ color: '#64748b' }}>None</span>
-                        : tableStatuses
-                            .filter(t => t.isActive === false)
-                            .sort((a, b) => Number(a.tableNumber) - Number(b.tableNumber))
-                            .map(t => `#${t.tableNumber}`)
-                            .join(', ')
-                    }
-                </div>
             </div>
 
             {mode === 'single' ? (
@@ -1222,6 +1134,306 @@ const QRTab = () => {
 };
 
 /* ============================
+   TABLE CONTROL TAB
+   ============================ */
+const TableControlTab = () => {
+    const restaurantId = localStorage.getItem('restaurantId');
+    const [tableControlNumber, setTableControlNumber] = useState('');
+    const [tableControlLoading, setTableControlLoading] = useState(false);
+    const [tableControlMsg, setTableControlMsg] = useState('');
+    const [tableStatuses, setTableStatuses] = useState([]);
+    const [tableStatusLoading, setTableStatusLoading] = useState(false);
+
+    const fetchTableStatuses = async () => {
+        if (!restaurantId) return;
+        setTableStatusLoading(true);
+        try {
+            const res = await restaurantApi.getTableStatuses(restaurantId);
+            setTableStatuses(res?.data?.data || []);
+        } catch (err) {
+            setTableControlMsg(err?.response?.data?.message || 'Failed to load table statuses.');
+        } finally {
+            setTableStatusLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTableStatuses();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [restaurantId]);
+
+    const handleTableToggle = async (nextActive) => {
+        const normalized = String(tableControlNumber || '').trim();
+        if (!normalized) {
+            setTableControlMsg('Enter a table number first.');
+            return;
+        }
+        setTableControlLoading(true);
+        setTableControlMsg('');
+        try {
+            const res = await restaurantApi.updateTableStatus(restaurantId, {
+                tableNumber: normalized,
+                isActive: nextActive
+            });
+            setTableStatuses(res?.data?.data || []);
+            setTableControlMsg(res?.data?.message || `Table ${normalized} updated.`);
+        } catch (err) {
+            setTableControlMsg(err?.response?.data?.message || 'Failed to update table status.');
+        } finally {
+            setTableControlLoading(false);
+        }
+    };
+
+    return (
+        <div className="db-panel" style={{ padding: '24px' }}>
+            <div className="db-topbar" style={{ marginBottom: '12px' }}>
+                <div>
+                    <h1>Table Control</h1>
+                    <p>Turn tables ON/OFF to prevent unnecessary orders.</p>
+                </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div className="db-form-field" style={{ minWidth: '160px', marginBottom: 0 }}>
+                    <label>Table Number</label>
+                    <input
+                        type="number"
+                        placeholder="e.g. 5"
+                        value={tableControlNumber}
+                        onChange={(e) => setTableControlNumber(e.target.value)}
+                        className="db-search-input"
+                        style={{ paddingLeft: '14px' }}
+                    />
+                </div>
+                <button type="button" className="lp-btn-outline" onClick={() => handleTableToggle(true)} disabled={tableControlLoading}>
+                    Turn ON
+                </button>
+                <button type="button" className="lp-btn-primary" onClick={() => handleTableToggle(false)} disabled={tableControlLoading}>
+                    Turn OFF
+                </button>
+                <button type="button" className="lp-btn-outline" onClick={fetchTableStatuses} disabled={tableStatusLoading}>
+                    <RefreshCw size={14} /> Refresh
+                </button>
+            </div>
+            {tableControlMsg && (
+                <p style={{ margin: '12px 0 0', fontSize: '0.9rem', color: '#1d4ed8' }}>{tableControlMsg}</p>
+            )}
+            <div style={{ marginTop: '14px' }}>
+                <strong style={{ fontSize: '0.9rem' }}>OFF Tables:</strong>{' '}
+                {tableStatuses.filter(t => t.isActive === false).length === 0
+                    ? <span style={{ color: '#64748b' }}>None</span>
+                    : tableStatuses
+                        .filter(t => t.isActive === false)
+                        .sort((a, b) => Number(a.tableNumber) - Number(b.tableNumber))
+                        .map(t => `#${t.tableNumber}`)
+                        .join(', ')
+                }
+            </div>
+        </div>
+    );
+};
+
+/* ============================
+   SETTINGS TAB
+   ============================ */
+const SettingsTab = ({ onRestaurantUpdated }) => {
+    const restaurantId = localStorage.getItem('restaurantId');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [form, setForm] = useState({
+        name: '',
+        address: '',
+        contactNumber: '',
+        logo: ''
+    });
+
+    const fetchRestaurant = async () => {
+        if (!restaurantId) return;
+        setLoading(true);
+        setError('');
+        try {
+            const res = await restaurantApi.getById(restaurantId);
+            const data = res?.data?.data || {};
+            setForm({
+                name: data.name || '',
+                address: data.address || '',
+                contactNumber: data.contactNumber || '',
+                logo: data.logo || ''
+            });
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to load restaurant details.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRestaurant();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [restaurantId]);
+
+    const handleLogoUpload = async (file) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setError('Please select an image file for logo.');
+            return;
+        }
+        setUploading(true);
+        setUploadProgress(0);
+        setError('');
+        try {
+            const res = await uploadApi.image(file, setUploadProgress);
+            if (res?.data?.url) {
+                setForm(prev => ({ ...prev, logo: res.data.url }));
+            }
+        } catch (err) {
+            setError(err?.response?.data?.message || err.message || 'Logo upload failed.');
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setError('');
+        setSuccess('');
+        try {
+            const payload = {
+                name: form.name.trim(),
+                address: form.address.trim(),
+                contactNumber: form.contactNumber.trim(),
+                logo: form.logo.trim()
+            };
+            await restaurantApi.updateDetails(restaurantId, payload);
+            setSuccess('Restaurant details updated successfully.');
+            if (onRestaurantUpdated) onRestaurantUpdated();
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to update restaurant details.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="db-panel db-state">
+                <Loader2 size={42} className="animate-spin" color="#7c3aed" />
+                <p>Loading settings...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="db-panel" style={{ padding: '24px' }}>
+            <div className="db-topbar" style={{ marginBottom: '16px' }}>
+                <div>
+                    <h1>Restaurant Settings</h1>
+                    <p>Update your restaurant details and logo.</p>
+                </div>
+            </div>
+
+            {error && <div className="auth-error" style={{ marginBottom: '12px' }}>{error}</div>}
+            {success && <div className="db-success-toast" style={{ marginBottom: '12px' }}><Check size={16} /> {success}</div>}
+
+            <form onSubmit={handleSubmit} className="db-menu-form">
+                <div className="db-form-field">
+                    <label>Restaurant Name</label>
+                    <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                        minLength={2}
+                        required
+                    />
+                </div>
+
+                <div className="db-form-field">
+                    <label>Address</label>
+                    <textarea
+                        value={form.address}
+                        onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
+                        rows={3}
+                        required
+                    />
+                </div>
+
+                <div className="db-form-field">
+                    <label>Contact Number</label>
+                    <input
+                        type="text"
+                        value={form.contactNumber}
+                        onChange={(e) => setForm(prev => ({ ...prev, contactNumber: e.target.value }))}
+                        placeholder="e.g. +91 9876543210"
+                    />
+                </div>
+
+                <div className="db-form-field">
+                    <label>Logo</label>
+                    <div className="db-upload-zone" style={{ minHeight: '160px' }}>
+                        {!uploading && (
+                            <input
+                                type="file"
+                                accept="image/*"
+                                title=""
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    opacity: 0,
+                                    cursor: 'pointer',
+                                    zIndex: 10
+                                }}
+                                onChange={(e) => {
+                                    if (e.target.files?.[0]) handleLogoUpload(e.target.files[0]);
+                                    e.target.value = '';
+                                }}
+                            />
+                        )}
+
+                        {uploading ? (
+                            <div className="db-upload-progress">
+                                <Loader2 size={24} className="animate-spin" color="#7c3aed" />
+                                <p>Uploading logo... {uploadProgress}%</p>
+                                <div className="db-progress-bar">
+                                    <div className="db-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                                </div>
+                            </div>
+                        ) : form.logo ? (
+                            <div className="db-upload-preview">
+                                <img src={form.logo} alt="Restaurant logo" />
+                                <div className="db-upload-overlay" style={{ pointerEvents: 'none' }}>
+                                    <ImagePlus size={20} />
+                                    <span>Click to replace logo</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="db-upload-placeholder">
+                                <Upload size={28} color="#94a3b8" />
+                                <p><strong>Click to upload</strong> restaurant logo</p>
+                                <span>JPG, PNG, WebP</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="db-form-actions">
+                    <button type="button" className="lp-btn-outline" onClick={fetchRestaurant}>Reset</button>
+                    <button type="submit" className="lp-btn-primary" disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+/* ============================
    MAIN DASHBOARD
    ============================ */
 const AdminDashboard = () => {
@@ -1316,6 +1528,7 @@ const AdminDashboard = () => {
         { icon: <LayoutDashboard size={18} />, label: 'Overview', key: 'overview', allowed: ['admin', 'chef'] },
         { icon: <UtensilsCrossed size={18} />, label: 'Menu', key: 'menu', allowed: ['admin'] },
         { icon: <QrCode size={18} />, label: 'QR Generator', key: 'qr', allowed: ['admin'] },
+        { icon: <Power size={18} />, label: 'Table Control', key: 'table-control', allowed: ['admin'] },
         { icon: <Settings size={18} />, label: 'Settings', key: 'settings', allowed: ['admin'] }
     ].filter(item => item.allowed.includes(role));
 
@@ -1364,12 +1577,8 @@ const AdminDashboard = () => {
                 )}
                 {activeTab === 'menu' && <MenuTab />}
                 {activeTab === 'qr' && <QRTab />}
-                {activeTab === 'settings' && (
-                    <div className="db-panel db-state">
-                        <Settings size={42} color="#cbd5e1" />
-                        <p>Settings coming soon.</p>
-                    </div>
-                )}
+                {activeTab === 'table-control' && <TableControlTab />}
+                {activeTab === 'settings' && <SettingsTab onRestaurantUpdated={fetchRestaurantName} />}
             </section>
         </div>
     );

@@ -92,3 +92,53 @@ exports.updateTableStatus = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+exports.updateRestaurantDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, address, contactNumber, logo } = req.body;
+
+        if (String(req.user.restaurant) !== String(id)) {
+            return res.status(403).json({ success: false, message: "Unauthorized for this restaurant" });
+        }
+
+        const restaurant = await Restaurant.findById(id);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        if (typeof name === "string") {
+            const normalizedName = name.trim();
+            if (normalizedName.length < 2) {
+                return res.status(400).json({ success: false, message: "Restaurant name must be at least 2 characters" });
+            }
+            restaurant.name = normalizedName;
+        }
+
+        if (typeof address === "string") {
+            const normalizedAddress = address.trim();
+            if (!normalizedAddress) {
+                return res.status(400).json({ success: false, message: "Address is required" });
+            }
+            restaurant.address = normalizedAddress;
+        }
+
+        if (typeof contactNumber === "string") {
+            restaurant.contactNumber = contactNumber.trim();
+        }
+
+        if (typeof logo === "string") {
+            restaurant.logo = logo.trim();
+        }
+
+        await restaurant.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Restaurant details updated successfully",
+            data: restaurant
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

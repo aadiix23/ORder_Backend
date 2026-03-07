@@ -7,16 +7,23 @@ import {
     Loader2,
     CheckCircle2,
     UtensilsCrossed,
-    ShoppingBag,
     ShoppingCart,
     ArrowRight,
+    ArrowLeft,
     AlertTriangle,
-    Clock,
     Star,
-    ChevronRight,
-    History
+    Heart,
+    Home,
+    User,
+    History,
+    SlidersHorizontal,
+    Minus,
+    X,
+    Check,
+    Clock
 } from 'lucide-react';
 import { menuApi, cartApi, restaurantApi } from '../api/api';
+import '../styles/menu.css';
 
 const Menu = () => {
     const { tableNumber } = useParams();
@@ -36,6 +43,9 @@ const Menu = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [addingItemId, setAddingItemId] = useState(null);
     const [selectedAddOnsByItem, setSelectedAddOnsByItem] = useState({});
+    const [activeTab, setActiveTab] = useState('home');
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [detailQty, setDetailQty] = useState(1);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -87,12 +97,6 @@ const Menu = () => {
     const handleAddToCart = async (item) => {
         if (!item.isAvailable || addingItemId) return;
 
-        console.log("Add to Cart Init:", {
-            table: tableNumber,
-            restaurant: restaurantId,
-            item: item.name
-        });
-
         setAddingItemId(item._id);
 
         try {
@@ -112,7 +116,6 @@ const Menu = () => {
             };
 
             const response = await cartApi.add(payload);
-            console.log("Add to Cart Success:", response.data);
 
             if (response.data.success) {
                 await refreshCart();
@@ -154,15 +157,36 @@ const Menu = () => {
         }, 0);
     }, [cartItems]);
 
+    // Generate a random-ish rating for display
+    const getRating = (item) => {
+        const hash = item.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+        return (4.0 + (hash % 10) / 10).toFixed(1);
+    };
+
     // Error Fallbacks
     if (!restaurantId) {
         return (
-            <div className="landing" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                <div className="lp-container">
-                    <AlertTriangle size={64} color="#7c3aed" style={{ marginBottom: '24px' }} />
-                    <h2 className="lp-hero-title" style={{ fontSize: '2rem' }}>Oops! Missing Info</h2>
-                    <p className="lp-hero-desc">We couldn't identify the restaurant. Please rescan the QR code on your table.</p>
-                    <button className="lp-btn-primary" onClick={() => navigate('/')}>Return Home</button>
+            <div className="menu-page-root" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <div style={{ padding: '0 24px' }}>
+                    <AlertTriangle size={64} color="#e63946" style={{ marginBottom: '24px' }} />
+                    <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '12px' }}>Oops! Missing Info</h2>
+                    <p style={{ color: '#8b8b8b', marginBottom: '24px' }}>We couldn't identify the restaurant. Please rescan the QR code on your table.</p>
+                    <button
+                        onClick={() => navigate('/')}
+                        style={{
+                            background: '#e63946',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '14px 32px',
+                            borderRadius: '14px',
+                            fontWeight: 700,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            fontFamily: 'Outfit, sans-serif'
+                        }}
+                    >
+                        Return Home
+                    </button>
                 </div>
             </div>
         );
@@ -170,280 +194,385 @@ const Menu = () => {
 
     if (loading) {
         return (
-            <div className="landing" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="menu-page-root" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ textAlign: 'center' }}>
-                    <Loader2 size={48} className="animate-spin" color="#7c3aed" />
-                    <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 600 }}>Crafting your menu...</p>
+                    <Loader2 size={48} className="animate-spin" color="#e63946" />
+                    <p style={{ marginTop: '16px', color: '#8b8b8b', fontWeight: 600 }}>Crafting your menu...</p>
                 </div>
             </div>
         );
     }
 
+    const brandName = restaurant?.name || 'QRder';
+
     return (
-        <div className="landing menu-page-root" style={{ background: '#ffffff' }}>
-            {/* Navbar — Exactly like Landing Page */}
-            <nav className="lp-nav">
-                <div className="lp-nav-inner">
-                    <div className="lp-logo" onClick={() => navigate('/')}>
-                        <div className="lp-logo-icon">Q</div>
-                        <span>QRder</span>
-                    </div>
-                    <div className="lp-nav-actions">
-                        <div
-                            onClick={() => navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`)}
-                            style={{
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                background: '#7c3aed',
-                                padding: '8px 16px',
-                                borderRadius: '12px',
-                                color: '#fff',
-                                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.2)',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+        <div className="menu-page-root">
+            {/* Brand Header — Foodgo Style */}
+            <motion.div
+                className="menu-brand-header"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+            >
+                <div className="menu-brand-left">
+                    <h1>{brandName}</h1>
+                    <p>Table #{tableNumber} — Order your favourite food!</p>
+                </div>
+                <div className="menu-brand-avatar">
+                    {brandName.charAt(0)}
+                </div>
+            </motion.div>
+
+            {/* Search Bar + Filter Button */}
+            <motion.div
+                className="menu-search-container"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+            >
+                <div className="menu-search-bar">
+                    <Search size={20} className="search-icon" />
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <button className="menu-filter-btn" aria-label="Filter">
+                    <SlidersHorizontal size={20} />
+                </button>
+            </motion.div>
+
+            {/* Category Pills */}
+            <motion.div
+                className="menu-categories-wrap"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+            >
+                <div className="menu-categories">
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            className={`menu-cat-pill ${activeCategory === cat ? 'active' : ''}`}
+                            onClick={() => setActiveCategory(cat)}
                         >
-                            <ShoppingCart size={18} />
-                            <span style={{ fontWeight: 800 }}>{cartItems.length}</span>
-                        </div>
-                        <div
-                            onClick={() => navigate(`/history/${tableNumber}?restaurantId=${restaurantId}`)}
-                            style={{
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                background: 'rgba(245, 158, 11, 0.1)',
-                                padding: '8px 16px',
-                                borderRadius: '12px',
-                                color: '#d97706',
-                                border: '1px solid rgba(245, 158, 11, 0.2)',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                        >
-                            <History size={18} />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>History</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(124, 58, 237, 0.08)', padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(124, 58, 237, 0.1)' }}>
-                            <ShoppingBag size={16} color="#7c3aed" />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1a2e' }}>Table {tableNumber}</span>
-                        </div>
-                    </div>
+                            {cat}
+                        </button>
+                    ))}
                 </div>
-            </nav>
-
-            {/* Hero Section — Landing Page Vibe */}
-            <header className="lp-hero" style={{ padding: '140px 0 60px' }}>
-                <div className="lp-hero-gradient" />
-                <div className="lp-container">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <span className="lp-label" style={{ marginBottom: '16px' }}>Welcome to</span>
-                        <h1 className="lp-hero-title" style={{ marginBottom: '12px' }}>{restaurant?.name || 'Gourmet Dining'}</h1>
-                        <p className="lp-hero-desc" style={{ marginBottom: '0', maxWidth: '100%' }}>
-                            {restaurant?.address || 'Fresh ingredients, curated recipes, delivered to your table.'}
-                        </p>
-                    </motion.div>
-                </div>
-            </header>
-
-            {/* Search & Categories */}
-            <div className="sticky-controls" style={{ position: 'sticky', top: '68px', zIndex: 100, background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
-                <div className="lp-container">
-                    {/* Search Bar */}
-                    <div style={{ padding: '16px 0' }}>
-                        <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto' }}>
-                            <Search size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                            <input
-                                type="text"
-                                placeholder="Search for your favorites..."
-                                className="lp-input"
-                                style={{ width: '100%', padding: '16px 16px 16px 56px', borderRadius: '16px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '1rem', outline: 'none' }}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Category Scroll */}
-                    <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
-                        {categories.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveCategory(cat)}
-                                style={{
-                                    whiteSpace: 'nowrap',
-                                    padding: '10px 24px',
-                                    borderRadius: '12px',
-                                    border: '1px solid',
-                                    borderColor: activeCategory === cat ? '#7c3aed' : '#e2e8f0',
-                                    background: activeCategory === cat ? '#7c3aed' : '#ffffff',
-                                    color: activeCategory === cat ? '#ffffff' : '#64748b',
-                                    fontWeight: 700,
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
-                                }}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+            </motion.div>
 
             {/* Menu Grid */}
-            <main className="lp-container" style={{ padding: '48px 24px 160px' }}>
-                {displayedItems.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                        <UtensilsCrossed size={64} color="#e2e8f0" style={{ marginBottom: '16px' }} />
-                        <h3 style={{ color: '#1a1a2e', fontSize: '1.25rem' }}>No items found</h3>
-                        <p style={{ color: '#64748b' }}>Try adjusting your search or category.</p>
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '32px' }}>
-                        {displayedItems.map((item, idx) => {
+            <main className="menu-grid-container">
+                <div className="menu-grid">
+                    {displayedItems.length === 0 ? (
+                        <div className="menu-empty">
+                            <div className="menu-empty-icon">
+                                <UtensilsCrossed size={36} color="#ddd" />
+                            </div>
+                            <h3>No items found</h3>
+                            <p>Try adjusting your search or category.</p>
+                        </div>
+                    ) : (
+                        displayedItems.map((item, idx) => {
                             const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
-                            return (
-                            <motion.div
-                                key={item._id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.05 }}
-                                className="lp-feature-card"
-                                style={{ padding: '0', overflow: 'hidden', cursor: 'default' }}
-                            >
-                                <div style={{ height: '220px', background: '#f8fafc', position: 'relative' }}>
-                                    {primaryImage ? (
-                                        <img src={primaryImage} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <UtensilsCrossed size={48} color="#e2e8f0" />
-                                        </div>
-                                    )}
-                                    <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', gap: '8px' }}>
-                                        {item.attributes?.isVeg && <span style={{ background: '#22c55e', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>VEG</span>}
-                                        {item.attributes?.isNonVeg && <span style={{ background: '#f97316', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>NON-VEG</span>}
-                                        {item.attributes?.isSpicy && <span style={{ background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>SPICY</span>}
-                                    </div>
-                                </div>
-                                <div style={{ padding: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                                        <h3 style={{ margin: '0', fontSize: '1.2rem', fontWeight: 700 }}>{item.name}</h3>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ color: '#7c3aed', fontWeight: 800, fontSize: '1.2rem' }}>₹{Number(item.price).toFixed(2)}</span>
-                                            {(item.mrp !== null && item.mrp !== undefined && Number(item.mrp) > Number(item.price)) && (
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                    <s>₹{Number(item.mrp).toFixed(2)}</s>{' '}
-                                                    <span style={{ color: '#16a34a', fontWeight: 700 }}>
-                                                        {Math.round(((Number(item.mrp) - Number(item.price)) / Number(item.mrp)) * 100)}% OFF
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <p style={{ margin: '0 0 10px', fontSize: '0.78rem', fontWeight: 700, color: '#7c3aed' }}>
-                                        Size: {item.size || 'Regular'}
-                                    </p>
-                                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '24px', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '40px' }}>
-                                        {item.description}
-                                    </p>
-                                    {Array.isArray(item.addOns) && item.addOns.some(addOn => addOn?.isAvailable !== false) && (
-                                        <div style={{ marginBottom: '14px', padding: '10px', border: '1px solid #ede9fe', borderRadius: '10px', background: '#faf5ff' }}>
-                                            <p style={{ margin: '0 0 8px', fontSize: '0.75rem', fontWeight: 700, color: '#6d28d9' }}>
-                                                Customize with add-ons
-                                            </p>
-                                            <div style={{ display: 'grid', gap: '6px' }}>
-                                                {item.addOns.filter(addOn => addOn?.isAvailable !== false).map((addOn, addOnIdx) => (
-                                                    <label key={`${item._id}-addon-${addOnIdx}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '0.84rem', color: '#334155' }}>
-                                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={(selectedAddOnsByItem[item._id] || []).includes(addOn.name)}
-                                                                onChange={() => toggleAddOnSelection(item._id, addOn.name)}
-                                                            />
-                                                            {addOn.name}
-                                                        </span>
-                                                        <strong style={{ color: '#7c3aed' }}>+₹{Number(addOn.price || 0).toFixed(2)}</strong>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                            const rating = getRating(item);
+                            const isAdding = addingItemId === item._id;
+                            const hasAddOns = Array.isArray(item.addOns) && item.addOns.some(a => a?.isAvailable !== false);
 
-                                    <button
-                                        className={addingItemId === item._id ? 'lp-btn-outline' : 'lp-btn-primary'}
-                                        style={{ width: '100%', justifyContent: 'center', padding: '14px', borderRadius: '12px' }}
-                                        onClick={() => handleAddToCart(item)}
-                                        disabled={addingItemId === item._id || !item.isAvailable}
-                                    >
-                                        {!item.isAvailable ? (
-                                            'Out of Stock'
-                                        ) : addingItemId === item._id ? (
-                                            <><CheckCircle2 size={18} /> Added to Tray</>
+                            return (
+                                <motion.div
+                                    key={item._id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.04, duration: 0.35 }}
+                                    className={`menu-card ${!item.isAvailable ? 'unavailable' : ''}`}
+                                    onClick={() => item.isAvailable && setSelectedItem(item)}
+                                    style={{ cursor: item.isAvailable ? 'pointer' : 'default' }}
+                                >
+                                    {/* Image */}
+                                    <div className="menu-card-image">
+                                        {primaryImage ? (
+                                            <img src={primaryImage} alt={item.name} loading="lazy" />
                                         ) : (
-                                            <><Plus size={18} /> Add to Cart</>
+                                            <div className="menu-card-image-placeholder">
+                                                <UtensilsCrossed size={36} />
+                                            </div>
                                         )}
-                                    </button>
-                                </div>
-                            </motion.div>
+                                        {/* Badges */}
+                                        <div className="menu-card-badges">
+                                            {item.attributes?.isVeg && <span className="menu-badge menu-badge-veg">VEG</span>}
+                                            {item.attributes?.isNonVeg && <span className="menu-badge menu-badge-nonveg">NON-VEG</span>}
+                                            {item.attributes?.isSpicy && <span className="menu-badge menu-badge-spicy">SPICY</span>}
+                                            {!item.isAvailable && <span className="menu-badge menu-badge-unavailable">SOLD OUT</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* Body */}
+                                    <div className="menu-card-body">
+                                        <h3 className="menu-card-name">{item.name}</h3>
+                                        <p className="menu-card-subtitle">{item.description}</p>
+
+                                        {/* Price */}
+                                        <div className="menu-card-price-tag">₹{Number(item.price).toFixed(0)}</div>
+
+                                        {/* Rating & Heart */}
+                                        <div className="menu-card-footer">
+                                            <div className="menu-card-rating">
+                                                <Star size={14} className="star-icon" fill="#f59e0b" stroke="#f59e0b" />
+                                                <span>{rating}</span>
+                                            </div>
+                                            <button
+                                                className="menu-card-heart"
+                                                aria-label="Favorite"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Heart size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
                             );
-                        })}
-                    </div>
-                )}
+                        })
+                    )}
+                </div>
             </main>
 
-            {/* Floating Cart Bar — Landing Page Premium Style */}
+            {/* ===== Full-Screen Product Detail Page ===== */}
+            <AnimatePresence>
+                {selectedItem && (() => {
+                    const item = selectedItem;
+                    const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
+                    const hasAddOns = Array.isArray(item.addOns) && item.addOns.some(a => a?.isAvailable !== false);
+                    const availableAddOns = (item.addOns || []).filter(a => a?.isAvailable !== false);
+                    const isAdding = addingItemId === item._id;
+                    const selectedAddOns = selectedAddOnsByItem[item._id] || [];
+                    const addOnTotal = availableAddOns
+                        .filter(a => selectedAddOns.includes(a.name))
+                        .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+                    const itemTotal = (Number(item.price) + addOnTotal) * detailQty;
+
+                    return (
+                        <motion.div
+                            className="product-detail-page"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                        >
+                            {/* Top Bar */}
+                            <div className="pd-topbar">
+                                <button
+                                    className="fg-back-btn"
+                                    onClick={() => { setSelectedItem(null); setDetailQty(1); }}
+                                >
+                                    <ArrowLeft size={20} />
+                                </button>
+                                <div className="fg-topbar-right">
+                                    <Search size={20} />
+                                </div>
+                            </div>
+
+                            {/* Product Image */}
+                            <div className="pd-image-section">
+                                {primaryImage ? (
+                                    <img src={primaryImage} alt={item.name} />
+                                ) : (
+                                    <div className="pd-image-placeholder">
+                                        <UtensilsCrossed size={56} color="#ddd" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Product Body */}
+                            <div className="pd-body">
+                                <h1 className="pd-title">{item.name}</h1>
+
+                                {/* Rating + Time */}
+                                <div className="pd-meta">
+                                    <Star size={16} className="star" fill="#f59e0b" stroke="#f59e0b" />
+                                    <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{getRating(item)}</span>
+                                    <span style={{ color: '#ccc' }}>—</span>
+                                    <Clock size={14} />
+                                    <span>20 mins</span>
+                                </div>
+
+                                {/* Description */}
+                                <p className="pd-description">{item.description}</p>
+
+                                {/* Badges */}
+                                <div className="pd-badges">
+                                    {item.attributes?.isVeg && <span className="pd-badge veg">VEG</span>}
+                                    {item.attributes?.isNonVeg && <span className="pd-badge nonveg">NON-VEG</span>}
+                                    {item.attributes?.isSpicy && <span className="pd-badge spicy">🌶 SPICY</span>}
+                                    {item.size && <span className="pd-badge size">{item.size}</span>}
+                                    {(item.mrp != null && Number(item.mrp) > Number(item.price)) && (
+                                        <span className="pd-badge" style={{ background: 'rgba(22,163,106,0.08)', color: '#16a34a' }}>
+                                            {Math.round(((Number(item.mrp) - Number(item.price)) / Number(item.mrp)) * 100)}% OFF
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Portion / Quantity Control */}
+                                <div className="pd-controls-row">
+                                    <div className="pd-control-group">
+                                        <span className="pd-control-label">Portion</span>
+                                        <div className="pd-qty-row">
+                                            <button
+                                                className="pd-qty-btn minus"
+                                                onClick={() => setDetailQty(q => Math.max(1, q - 1))}
+                                            >
+                                                <Minus size={18} />
+                                            </button>
+                                            <span className="pd-qty-value">{detailQty}</span>
+                                            <button
+                                                className="pd-qty-btn plus"
+                                                onClick={() => setDetailQty(q => q + 1)}
+                                            >
+                                                <Plus size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Add-ons — Horizontal Scrollable Cards (like Toppings) */}
+                                {hasAddOns && (
+                                    <div className="pd-addons-section">
+                                        <h3 className="pd-addons-title">Customize</h3>
+                                        <div className="pd-addons-grid">
+                                            {availableAddOns.map((addOn, i) => {
+                                                const isSelected = selectedAddOns.includes(addOn.name);
+                                                return (
+                                                    <div
+                                                        key={`pd-addon-${i}`}
+                                                        className={`pd-addon-card ${isSelected ? 'selected' : ''}`}
+                                                        onClick={() => toggleAddOnSelection(item._id, addOn.name)}
+                                                    >
+                                                        {isSelected && (
+                                                            <div className="pd-addon-check">
+                                                                <Check size={12} />
+                                                            </div>
+                                                        )}
+                                                        <div className="addon-icon">🍽</div>
+                                                        <div className="addon-name">{addOn.name}</div>
+                                                        <div className="addon-price">+₹{Number(addOn.price || 0).toFixed(0)}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Bottom Order Bar */}
+                            <div className="pd-order-bar">
+                                <div className="pd-price-display">
+                                    ₹{itemTotal.toFixed(0)}
+                                </div>
+                                <button
+                                    className={`pd-order-btn ${isAdding ? 'success' : ''}`}
+                                    onClick={async () => {
+                                        // Add to cart with quantity
+                                        for (let i = 0; i < detailQty; i++) {
+                                            await handleAddToCart(item);
+                                        }
+                                    }}
+                                    disabled={isAdding}
+                                >
+                                    {isAdding ? 'Added!' : 'Add to Cart'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    );
+                })()}
+            </AnimatePresence>
+
+            {/* Floating Cart Bar */}
             <AnimatePresence>
                 {cartItems.length > 0 && (
                     <motion.div
+                        className="menu-cart-bar"
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 100, opacity: 0 }}
-                        style={{
-                            position: 'fixed',
-                            bottom: '32px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '500px',
-                            zIndex: 1000,
-                        }}
                     >
                         <div
-                            className="lp-cta-card"
-                            style={{
-                                padding: '16px 24px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                borderRadius: '24px',
-                                cursor: 'pointer',
-                                boxShadow: '0 20px 48px rgba(124, 58, 237, 0.4)'
-                            }}
+                            className="menu-cart-bar-inner"
                             onClick={() => navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`)}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{ background: '#fff', color: '#7c3aed', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                                    {cartItems.length}
-                                </div>
-                                <div style={{ textAlign: 'left' }}>
-                                    <p style={{ margin: 0, color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', fontWeight: 600 }}>Review Tray</p>
-                                    <p style={{ margin: 0, color: '#fff', fontSize: '1rem', fontWeight: 700 }}>₹{cartTotal.toFixed(2)} Total</p>
+                            <div className="menu-cart-left">
+                                <div className="menu-cart-count">{cartItems.length}</div>
+                                <div className="menu-cart-info">
+                                    <span className="label">Review Order</span>
+                                    <span className="total">₹{cartTotal.toFixed(2)}</span>
                                 </div>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.2)', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="menu-cart-arrow">
                                 <ArrowRight size={20} color="#fff" />
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div >
+
+            {/* Bottom Tab Bar */}
+            <div className="menu-bottom-bar">
+                <button
+                    className={`menu-tab-item ${activeTab === 'home' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('home'); }}
+                >
+                    <Home size={22} />
+                    <span>Menu</span>
+                </button>
+                <button
+                    className={`menu-tab-item ${activeTab === 'profile' ? 'active' : ''}`}
+                    onClick={() => {
+                        setActiveTab('profile');
+                    }}
+                >
+                    <User size={22} />
+                    <span>Table {tableNumber}</span>
+                </button>
+
+
+                <button
+                    className={`menu-tab-item ${activeTab === 'cart' ? 'active' : ''}`}
+                    onClick={() => {
+                        setActiveTab('cart');
+                        navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`);
+                    }}
+                >
+                    <ShoppingCart size={22} />
+                    <span>Cart</span>
+                </button>
+                <button
+                    className={`menu-tab-item ${activeTab === 'history' ? 'active' : ''}`}
+                    onClick={() => {
+                        setActiveTab('history');
+                        navigate(`/history/${tableNumber}?restaurantId=${restaurantId}`);
+                    }}
+                >
+                    <History size={22} />
+                    <span>Orders</span>
+                </button>
+            </div>
+
+            {/* Floating + Button (center of bottom bar) — only when cart is empty */}
+            {cartItems.length === 0 && (
+                <motion.button
+                    className="menu-fab"
+                    onClick={() => navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`)}
+                    whileTap={{ scale: 0.9 }}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: 'spring', stiffness: 260, damping: 20 }}
+                >
+                    <ShoppingCart size={24} />
+                </motion.button>
+            )}
+        </div>
     );
 };
 
