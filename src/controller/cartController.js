@@ -1,6 +1,53 @@
 const Cart = require("../models/cart/cartSchema")
 const Menu = require("../models/menu/menuSchema")
 
+const normalizeRequestedAddOns = (rawAddOns) => {
+    if (!Array.isArray(rawAddOns)) return [];
+
+    const normalized = rawAddOns
+        .map((addOn) => {
+            if (!addOn || typeof addOn !== "object") return null;
+            const name = typeof addOn.name === "string" ? addOn.name.trim() : "";
+            return name ? { name } : null;
+        })
+        .filter(Boolean);
+
+    const uniqueByName = new Map();
+    normalized.forEach((addOn) => {
+        uniqueByName.set(addOn.name.toLowerCase(), addOn);
+    });
+
+    return Array.from(uniqueByName.values());
+};
+
+const resolveValidatedAddOns = (menuItem, requestedAddOns) => {
+    const availableAddOns = Array.isArray(menuItem.addOns) ? menuItem.addOns : [];
+    const availableByName = new Map(
+        availableAddOns
+            .filter(addOn => addOn?.isAvailable !== false && typeof addOn.name === "string")
+            .map(addOn => [addOn.name.trim().toLowerCase(), addOn])
+    );
+
+    return requestedAddOns.map((requested) => {
+        const matched = availableByName.get(requested.name.toLowerCase());
+        if (!matched) {
+            throw new Error(`Add-on "${requested.name}" is invalid or unavailable for this item`);
+        }
+        return {
+            name: matched.name,
+            price: Number(matched.price) || 0
+        };
+    });
+};
+
+const getCartLineSignature = (menuItemId, addOns = []) => {
+    const normalizedAddOns = (Array.isArray(addOns) ? addOns : [])
+        .map(addOn => `${addOn.name}:${Number(addOn.price) || 0}`)
+        .sort()
+        .join("|");
+    return `${menuItemId}::${normalizedAddOns}`;
+};
+
 //CALCULATE TOTAL PRICE
 const calculateTotal = async (items) => {
     if (!items.length) return 0;
@@ -11,9 +58,10 @@ const calculateTotal = async (items) => {
 
     let total = 0;
     for (const item of items) {
-        const price = priceById.get(item.menuItem.toString());
-        if (price !== undefined) {
-            total += price * item.quantity;
+        const basePrice = priceById.get(item.menuItem.toString());
+        if (basePrice !== undefined) {
+            const addOnsTotal = (item.addOns || []).reduce((sum, addOn) => sum + (Number(addOn.price) || 0), 0);
+            total += (basePrice + addOnsTotal) * item.quantity;
         }
     }
     return total;
@@ -21,9 +69,10 @@ const calculateTotal = async (items) => {
 
 exports.addToCart = async (req, res) => {
     try {
-        const { tableNumber, menuItemId, quantity, notes, restaurantId } = req.body;
+        const { tableNumber, menuItemId, quantity, notes, restaurantId, addOns } = req.body;
         const normalizedTableNumber = String(tableNumber || "").trim();
         const parsedQuantity = Number(quantity);
+        const requestedAddOns = normalizeRequestedAddOns(addOns);
 
         console.log(`Add to Cart: Table ${normalizedTableNumber}, Item ${menuItemId}, Restaurant ${restaurantId}`);
 
@@ -34,13 +83,23 @@ exports.addToCart = async (req, res) => {
             });
         }
 
-        const menuItem = await Menu.findOne({ _id: menuItemId, restaurant: restaurantId, isAvailable: true }).select("_id");
+        const menuItem = await Menu.findOne({ _id: menuItemId, restaurant: restaurantId, isAvailable: true }).select("_id addOns");
         if (!menuItem) {
             return res.status(400).json({
                 success: false,
                 message: "Menu item is invalid, unavailable, or does not belong to this restaurant"
             });
         }
+        let validatedAddOns = [];
+        try {
+            validatedAddOns = resolveValidatedAddOns(menuItem, requestedAddOns);
+        } catch (validationError) {
+            return res.status(400).json({
+                success: false,
+                message: validationError.message
+            });
+        }
+        const requestedSignature = getCartLineSignature(menuItemId, validatedAddOns);
 
         // Find or create cart for this table at this restaurant
         let cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
@@ -53,11 +112,13 @@ exports.addToCart = async (req, res) => {
         }
 
         // Add item to cart
-        const existingItem = cart.items.find(item => item.menuItem.toString() === menuItemId);
+        const existingItem = cart.items.find(item => (
+            getCartLineSignature(item.menuItem.toString(), item.addOns || []) === requestedSignature
+        ));
         if (existingItem) {
             existingItem.quantity += parsedQuantity;
         } else {
-            cart.items.push({ menuItem: menuItemId, quantity: parsedQuantity, notes });
+            cart.items.push({ menuItem: menuItemId, quantity: parsedQuantity, notes, addOns: validatedAddOns });
         }
 
         cart.totalPrice = await calculateTotal(cart.items);
@@ -124,14 +185,14 @@ exports.getCartByTable = async (req, res) => {
 // update quantity
 exports.updateItemByCart = async (req, res) => {
     try {
-        const { tableNumber, menuItemId, quantity, restaurantId } = req.body;
+        const { tableNumber, menuItemId, cartItemId, quantity, restaurantId } = req.body;
         const normalizedTableNumber = String(tableNumber || "").trim();
         const parsedQuantity = Number(quantity);
 
         console.log(`Update Cart: Table ${normalizedTableNumber}, Item ${menuItemId}, Qty ${parsedQuantity}`);
 
-        if (!restaurantId || !normalizedTableNumber || !menuItemId || !Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
-            return res.status(400).json({ success: false, message: "Valid table number, restaurant ID, menu item ID, and quantity (>=1) are required" });
+        if (!restaurantId || !normalizedTableNumber || (!menuItemId && !cartItemId) || !Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
+            return res.status(400).json({ success: false, message: "Valid table number, restaurant ID, cart item ID/menu item ID, and quantity (>=1) are required" });
         }
 
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
@@ -142,9 +203,9 @@ exports.updateItemByCart = async (req, res) => {
                 message: "Cart Not Found"
             })
         }
-        const item = cart.items.find(
-            item => item.menuItem.toString() === menuItemId
-        );
+        const item = cart.items.find(item => (
+            cartItemId ? item._id.toString() === String(cartItemId) : item.menuItem.toString() === menuItemId
+        ));
         if (!item) {
             return res.status(404).json({
                 success: false,
@@ -169,13 +230,13 @@ exports.updateItemByCart = async (req, res) => {
 
 exports.removeItemFromCart = async (req, res) => {
     try {
-        const { tableNumber, menuItemId, restaurantId } = req.body;
+        const { tableNumber, menuItemId, cartItemId, restaurantId } = req.body;
         const normalizedTableNumber = String(tableNumber || "").trim();
 
         console.log(`Remove from Cart: Table ${normalizedTableNumber}, Item ${menuItemId}`);
 
-        if (!restaurantId || !normalizedTableNumber || !menuItemId) {
-            return res.status(400).json({ success: false, message: "Restaurant ID, table number, and menu item ID are required" });
+        if (!restaurantId || !normalizedTableNumber || (!menuItemId && !cartItemId)) {
+            return res.status(400).json({ success: false, message: "Restaurant ID, table number, and cart item ID/menu item ID are required" });
         }
 
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
@@ -185,9 +246,9 @@ exports.removeItemFromCart = async (req, res) => {
                 message: "Cart Not Found"
             })
         }
-        cart.items = cart.items.filter(
-            item => item.menuItem.toString() !== menuItemId
-        );
+        cart.items = cart.items.filter(item => (
+            cartItemId ? item._id.toString() !== String(cartItemId) : item.menuItem.toString() !== menuItemId
+        ));
         cart.totalPrice = await calculateTotal(cart.items);
         await cart.save();
         res.status(200).json({

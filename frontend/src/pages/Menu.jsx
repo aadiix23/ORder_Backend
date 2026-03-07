@@ -35,6 +35,7 @@ const Menu = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('All');
     const [addingItemId, setAddingItemId] = useState(null);
+    const [selectedAddOnsByItem, setSelectedAddOnsByItem] = useState({});
 
     // Initial Data Fetch
     useEffect(() => {
@@ -70,6 +71,19 @@ const Menu = () => {
         }
     };
 
+    const toggleAddOnSelection = (itemId, addOnName) => {
+        setSelectedAddOnsByItem(prev => {
+            const existing = prev[itemId] || [];
+            const isSelected = existing.includes(addOnName);
+            return {
+                ...prev,
+                [itemId]: isSelected
+                    ? existing.filter(name => name !== addOnName)
+                    : [...existing, addOnName]
+            };
+        });
+    };
+
     const handleAddToCart = async (item) => {
         if (!item.isAvailable || addingItemId) return;
 
@@ -90,7 +104,11 @@ const Menu = () => {
                 tableNumber: tableNumber,
                 restaurantId: restaurantId,
                 menuItemId: item._id,
-                quantity: 1
+                quantity: 1,
+                addOns: (item.addOns || [])
+                    .filter(addOn => addOn?.isAvailable !== false)
+                    .filter(addOn => (selectedAddOnsByItem[item._id] || []).includes(addOn.name))
+                    .map(addOn => ({ name: addOn.name }))
             };
 
             const response = await cartApi.add(payload);
@@ -98,6 +116,7 @@ const Menu = () => {
 
             if (response.data.success) {
                 await refreshCart();
+                setSelectedAddOnsByItem(prev => ({ ...prev, [item._id]: [] }));
                 setTimeout(() => setAddingItemId(null), 1500);
             }
         } catch (err) {
@@ -128,7 +147,11 @@ const Menu = () => {
     }, [menuItems]);
 
     const cartTotal = useMemo(() => {
-        return cartItems.reduce((acc, curr) => acc + (curr.quantity * curr.menuItem.price), 0);
+        return cartItems.reduce((acc, curr) => {
+            const base = Number(curr?.menuItem?.price) || 0;
+            const addOnTotal = (curr?.addOns || []).reduce((sum, addOn) => sum + (Number(addOn?.price) || 0), 0);
+            return acc + (curr.quantity * (base + addOnTotal));
+        }, 0);
     }, [cartItems]);
 
     // Error Fallbacks
@@ -283,7 +306,9 @@ const Menu = () => {
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '32px' }}>
-                        {displayedItems.map((item, idx) => (
+                        {displayedItems.map((item, idx) => {
+                            const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
+                            return (
                             <motion.div
                                 key={item._id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -293,8 +318,8 @@ const Menu = () => {
                                 style={{ padding: '0', overflow: 'hidden', cursor: 'default' }}
                             >
                                 <div style={{ height: '220px', background: '#f8fafc', position: 'relative' }}>
-                                    {item.image ? (
-                                        <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    {primaryImage ? (
+                                        <img src={primaryImage} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
                                         <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <UtensilsCrossed size={48} color="#e2e8f0" />
@@ -302,13 +327,24 @@ const Menu = () => {
                                     )}
                                     <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', gap: '8px' }}>
                                         {item.attributes?.isVeg && <span style={{ background: '#22c55e', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>VEG</span>}
+                                        {item.attributes?.isNonVeg && <span style={{ background: '#f97316', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>NON-VEG</span>}
                                         {item.attributes?.isSpicy && <span style={{ background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>SPICY</span>}
                                     </div>
                                 </div>
                                 <div style={{ padding: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                                         <h3 style={{ margin: '0', fontSize: '1.2rem', fontWeight: 700 }}>{item.name}</h3>
-                                        <span style={{ color: '#7c3aed', fontWeight: 800, fontSize: '1.2rem' }}>₹{item.price}</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ color: '#7c3aed', fontWeight: 800, fontSize: '1.2rem' }}>₹{Number(item.price).toFixed(2)}</span>
+                                            {(item.mrp !== null && item.mrp !== undefined && Number(item.mrp) > Number(item.price)) && (
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                    <s>₹{Number(item.mrp).toFixed(2)}</s>{' '}
+                                                    <span style={{ color: '#16a34a', fontWeight: 700 }}>
+                                                        {Math.round(((Number(item.mrp) - Number(item.price)) / Number(item.mrp)) * 100)}% OFF
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     <p style={{ margin: '0 0 10px', fontSize: '0.78rem', fontWeight: 700, color: '#7c3aed' }}>
                                         Size: {item.size || 'Regular'}
@@ -316,6 +352,28 @@ const Menu = () => {
                                     <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '24px', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '40px' }}>
                                         {item.description}
                                     </p>
+                                    {Array.isArray(item.addOns) && item.addOns.some(addOn => addOn?.isAvailable !== false) && (
+                                        <div style={{ marginBottom: '14px', padding: '10px', border: '1px solid #ede9fe', borderRadius: '10px', background: '#faf5ff' }}>
+                                            <p style={{ margin: '0 0 8px', fontSize: '0.75rem', fontWeight: 700, color: '#6d28d9' }}>
+                                                Customize with add-ons
+                                            </p>
+                                            <div style={{ display: 'grid', gap: '6px' }}>
+                                                {item.addOns.filter(addOn => addOn?.isAvailable !== false).map((addOn, addOnIdx) => (
+                                                    <label key={`${item._id}-addon-${addOnIdx}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '0.84rem', color: '#334155' }}>
+                                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={(selectedAddOnsByItem[item._id] || []).includes(addOn.name)}
+                                                                onChange={() => toggleAddOnSelection(item._id, addOn.name)}
+                                                            />
+                                                            {addOn.name}
+                                                        </span>
+                                                        <strong style={{ color: '#7c3aed' }}>+₹{Number(addOn.price || 0).toFixed(2)}</strong>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <button
                                         className={addingItemId === item._id ? 'lp-btn-outline' : 'lp-btn-primary'}
@@ -333,7 +391,8 @@ const Menu = () => {
                                     </button>
                                 </div>
                             </motion.div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </main>

@@ -29,6 +29,7 @@ const SIZES = ['Regular', 'Small', 'Medium', 'Large'];
 const MULTI_SIZE_OPTIONS = ['Small', 'Medium', 'Large', 'Regular'];
 const MULTI_SIZES_VALUE = '__MULTI_SIZES__';
 const CUSTOM_CATEGORY_VALUE = '__CUSTOM_CATEGORY__';
+const MAX_IMAGES_PER_ITEM = 6;
 
 const getStatusClass = (status) => {
     const s = (status || 'Pending').toLowerCase();
@@ -111,7 +112,14 @@ const OverviewTab = ({ orders, loading, error, stats, fetchOrders, updateOrderSt
                         <div className="db-order-items">
                             {order.items?.map((item, idx) => (
                                 <div key={`${order._id}-${idx}`} className="db-order-item-row">
-                                    <span>{item?.menuItem?.name || 'Item'} x {item.quantity}</span>
+                                    <span>
+                                        {item?.menuItem?.name || 'Item'} x {item.quantity}
+                                        {(item?.addOns || []).length > 0 && (
+                                            <small style={{ display: 'block', color: '#64748b' }}>
+                                                + {item.addOns.map(addOn => addOn.name).join(', ')}
+                                            </small>
+                                        )}
+                                    </span>
                                     <strong>₹{((item.priceAtOrderTime || 0) * item.quantity).toFixed(2)}</strong>
                                 </div>
                             ))}
@@ -139,9 +147,11 @@ const emptyForm = {
     selectedSizes: ['Small', 'Medium', 'Large'],
     sizePrices: { Small: '', Medium: '', Large: '', Regular: '' },
     price: '',
-    image: '',
+    mrp: '',
+    images: [],
+    addOns: [],
     isAvailable: true,
-    attributes: { isVeg: false, isSpicy: false }
+    attributes: { isVeg: false, isNonVeg: false, isSpicy: false }
 };
 
 const MenuTab = () => {
@@ -149,6 +159,7 @@ const MenuTab = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('All');
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(emptyForm);
@@ -182,15 +193,18 @@ const MenuTab = () => {
     };
 
     const filtered = useMemo(() => {
-        if (!searchTerm.trim()) return items;
-        const q = searchTerm.toLowerCase();
-        return items.filter(i =>
-            i.name?.toLowerCase().includes(q) ||
-            i.category?.toLowerCase().includes(q) ||
-            i.size?.toLowerCase().includes(q) ||
-            i.description?.toLowerCase().includes(q)
-        );
-    }, [items, searchTerm]);
+        const q = searchTerm.trim().toLowerCase();
+        return items.filter(i => {
+            const matchesCategory = categoryFilter === 'All' || i.category === categoryFilter;
+            if (!q) return matchesCategory;
+            const matchesSearch =
+                i.name?.toLowerCase().includes(q) ||
+                i.category?.toLowerCase().includes(q) ||
+                i.size?.toLowerCase().includes(q) ||
+                i.description?.toLowerCase().includes(q);
+            return matchesCategory && matchesSearch;
+        });
+    }, [items, searchTerm, categoryFilter]);
 
     const categoryOptions = useMemo(() => {
         const fromItems = items
@@ -200,6 +214,10 @@ const MenuTab = () => {
         return [...new Set([...CATEGORIES, ...fromItems])];
     }, [items]);
 
+    const filterCategoryOptions = useMemo(() => {
+        return ['All', ...categoryOptions];
+    }, [categoryOptions]);
+
     const openCreate = () => {
         setForm(emptyForm);
         setEditingId(null);
@@ -208,6 +226,9 @@ const MenuTab = () => {
     };
 
     const openEdit = (item) => {
+        const existingImages = Array.isArray(item.images) && item.images.length > 0
+            ? item.images
+            : (item.image ? [item.image] : []);
         setForm({
             name: item.name || '',
             description: item.description || '',
@@ -215,10 +236,17 @@ const MenuTab = () => {
             customCategory: '',
             size: item.size || 'Regular',
             price: item.price || '',
-            image: item.image || '',
+            mrp: item.mrp !== null && item.mrp !== undefined ? String(item.mrp) : '',
+            images: existingImages,
+            addOns: Array.isArray(item.addOns) ? item.addOns.map(addOn => ({
+                name: addOn?.name || '',
+                price: Number.isFinite(Number(addOn?.price)) ? String(addOn.price) : '',
+                isAvailable: addOn?.isAvailable !== false
+            })) : [],
             isAvailable: item.isAvailable !== false,
             attributes: {
                 isVeg: item.attributes?.isVeg || false,
+                isNonVeg: item.attributes?.isNonVeg || false,
                 isSpicy: item.attributes?.isSpicy || false
             }
         });
@@ -236,38 +264,89 @@ const MenuTab = () => {
         setDragActive(false);
     };
 
-    const handleImageUpload = async (file) => {
-        if (!file) return;
-        if (!file.type.startsWith('image/')) {
-            setFormError('Please select an image file (jpg, png, webp, etc.)');
+    const handleImageUpload = async (fileList) => {
+        const files = Array.from(fileList || []).filter(Boolean);
+        if (!files.length) return;
+
+        if ((form.images?.length || 0) + files.length > MAX_IMAGES_PER_ITEM) {
+            setFormError(`You can upload up to ${MAX_IMAGES_PER_ITEM} images per item.`);
             return;
         }
-        if (file.size > 10 * 1024 * 1024) {
-            setFormError('Image must be under 10 MB.');
-            return;
+
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) {
+                setFormError('Please select image files only (jpg, png, webp, etc.)');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                setFormError('Each image must be under 10 MB.');
+                return;
+            }
         }
+
         setUploading(true);
         setUploadProgress(0);
         setFormError('');
         try {
-            const res = await uploadApi.image(file, setUploadProgress);
-            setForm(prev => ({ ...prev, image: res.data.url }));
+            const uploadedUrls = [];
+            for (const file of files) {
+                const res = await uploadApi.image(file, setUploadProgress);
+                if (res?.data?.url) uploadedUrls.push(res.data.url);
+            }
+            setForm(prev => ({ ...prev, images: [...(prev.images || []), ...uploadedUrls] }));
         } catch (err) {
-            setFormError(err.message || 'Image upload failed.');
+            setFormError(err?.response?.data?.message || err.message || 'Image upload failed.');
         } finally {
             setUploading(false);
+            setUploadProgress(0);
         }
+    };
+
+    const removeImageAt = (idx) => {
+        setForm(prev => ({
+            ...prev,
+            images: (prev.images || []).filter((_, i) => i !== idx)
+        }));
     };
 
     const handleChange = (e) => {
         const { name, value, checked } = e.target;
-        if (name === 'isVeg' || name === 'isSpicy') {
-            setForm(prev => ({ ...prev, attributes: { ...prev.attributes, [name]: checked } }));
+        if (name === 'isVeg' || name === 'isNonVeg' || name === 'isSpicy') {
+            setForm(prev => {
+                const nextAttributes = { ...prev.attributes, [name]: checked };
+                // Veg and Non-Veg should be mutually exclusive
+                if (name === 'isVeg' && checked) nextAttributes.isNonVeg = false;
+                if (name === 'isNonVeg' && checked) nextAttributes.isVeg = false;
+                return { ...prev, attributes: nextAttributes };
+            });
         } else if (name === 'isAvailable') {
             setForm(prev => ({ ...prev, isAvailable: checked }));
         } else {
             setForm(prev => ({ ...prev, [name]: value }));
         }
+    };
+
+    const addAddOnRow = () => {
+        setForm(prev => ({
+            ...prev,
+            addOns: [...(prev.addOns || []), { name: '', price: '', isAvailable: true }]
+        }));
+    };
+
+    const updateAddOnRow = (idx, key, value) => {
+        setForm(prev => ({
+            ...prev,
+            addOns: (prev.addOns || []).map((addOn, i) => (
+                i === idx ? { ...addOn, [key]: value } : addOn
+            ))
+        }));
+    };
+
+    const removeAddOnRow = (idx) => {
+        setForm(prev => ({
+            ...prev,
+            addOns: (prev.addOns || []).filter((_, i) => i !== idx)
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -298,6 +377,27 @@ const MenuTab = () => {
                 price: Number(form.price),
                 restaurant: restaurantId
             };
+            const parsedMrp = form.mrp === '' ? null : Number(form.mrp);
+            if (parsedMrp !== null && (!Number.isFinite(parsedMrp) || parsedMrp < 0)) {
+                setFormError('Enter a valid MRP (>= 0) or leave it empty.');
+                setSaving(false);
+                return;
+            }
+            if (parsedMrp !== null && Number(payload.price) > parsedMrp) {
+                setFormError('Selling price cannot be greater than MRP.');
+                setSaving(false);
+                return;
+            }
+            payload.mrp = parsedMrp;
+            payload.images = (payload.images || []).filter(Boolean);
+            payload.image = payload.images[0] || '';
+            payload.addOns = (payload.addOns || [])
+                .map(addOn => ({
+                    name: String(addOn?.name || '').trim(),
+                    price: Number(addOn?.price),
+                    isAvailable: addOn?.isAvailable !== false
+                }))
+                .filter(addOn => addOn.name && Number.isFinite(addOn.price) && addOn.price >= 0);
             delete payload.selectedSizes;
             delete payload.customCategory;
 
@@ -322,8 +422,15 @@ const MenuTab = () => {
                 payload.sizePrices = sizePrices;
                 delete payload.size;
                 delete payload.price;
+                payload.mrp = null;
             } else {
                 delete payload.sizePrices;
+            }
+
+            if (payload.images.length === 0) {
+                setFormError('Please upload at least one image.');
+                setSaving(false);
+                return;
             }
 
             if (editingId) {
@@ -403,15 +510,27 @@ const MenuTab = () => {
             )}
 
             {/* Search */}
-            <div className="db-menu-search">
-                <Search size={18} className="db-search-icon" />
-                <input
-                    type="text"
-                    placeholder="Search menu items..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+            <div className="db-menu-search" style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '12px' }}>
+                <div style={{ position: 'relative' }}>
+                    <Search size={18} className="db-search-icon" />
+                    <input
+                        type="text"
+                        placeholder="Search menu items..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="db-search-input"
+                    />
+                </div>
+                <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
                     className="db-search-input"
-                />
+                    style={{ paddingLeft: '14px' }}
+                >
+                    {filterCategoryOptions.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                    ))}
+                </select>
             </div>
 
             {/* Modal */}
@@ -459,11 +578,17 @@ const MenuTab = () => {
                                 </div>
                                 {!isMultiSizeCreate && (
                                     <div className="db-form-field">
-                                        <label>Price (₹)</label>
+                                        <label>Selling Price (₹)</label>
                                         <input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required placeholder="0.00" />
                                     </div>
                                 )}
                             </div>
+                            {!isMultiSizeCreate && (
+                                <div className="db-form-field">
+                                    <label>MRP (₹) (Optional)</label>
+                                    <input name="mrp" type="number" min="0" step="0.01" value={form.mrp} onChange={handleChange} placeholder="e.g. 299" />
+                                </div>
+                            )}
                             {isMultiSizeCreate && (
                                 <div className="db-form-field">
                                     <label>Size-wise Prices (₹)</label>
@@ -506,17 +631,61 @@ const MenuTab = () => {
                                 <textarea name="description" value={form.description} onChange={handleChange} required minLength={15} maxLength={500} rows={3} placeholder="Describe the dish (min 15 chars)" />
                             </div>
                             <div className="db-form-field">
-                                <label>Image</label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <label style={{ margin: 0 }}>Add-ons (Optional)</label>
+                                    <button type="button" className="lp-btn-outline" onClick={addAddOnRow} style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                                        <Plus size={14} /> Add Add-on
+                                    </button>
+                                </div>
+                                {(form.addOns || []).length === 0 ? (
+                                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>No add-ons added yet.</p>
+                                ) : (
+                                    <div style={{ display: 'grid', gap: '10px' }}>
+                                        {(form.addOns || []).map((addOn, idx) => (
+                                            <div key={`addon-${idx}`} style={{ display: 'grid', gridTemplateColumns: '1fr 140px auto auto', gap: '8px', alignItems: 'center' }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add-on name (e.g. Extra Cheese)"
+                                                    value={addOn.name}
+                                                    onChange={(e) => updateAddOnRow(idx, 'name', e.target.value)}
+                                                    maxLength={100}
+                                                />
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="Price"
+                                                    value={addOn.price}
+                                                    onChange={(e) => updateAddOnRow(idx, 'price', e.target.value)}
+                                                />
+                                                <label className="db-check-label" style={{ margin: 0 }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={addOn.isAvailable !== false}
+                                                        onChange={(e) => updateAddOnRow(idx, 'isAvailable', e.target.checked)}
+                                                    />
+                                                    <span>Available</span>
+                                                </label>
+                                                <button type="button" className="db-icon-btn delete" onClick={() => removeAddOnRow(idx)} title="Remove add-on">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="db-form-field">
+                                <label>Images</label>
                                 <div
-                                    className={`db-upload-zone ${dragActive ? 'drag-active' : ''} ${form.image ? 'has-preview' : ''}`}
+                                    className={`db-upload-zone ${dragActive ? 'drag-active' : ''} ${form.images?.length ? 'has-preview' : ''}`}
                                     onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                                     onDragLeave={() => setDragActive(false)}
                                     // Use drop on the container, but input covers the clicking
                                     onDrop={(e) => {
                                         e.preventDefault();
                                         setDragActive(false);
-                                        const file = e.dataTransfer?.files?.[0];
-                                        if (file) handleImageUpload(file);
+                                        const files = e.dataTransfer?.files;
+                                        if (files?.length) handleImageUpload(files);
                                     }}
                                 >
                                     {/* Invisible native input covering the zone */}
@@ -524,6 +693,7 @@ const MenuTab = () => {
                                         <input
                                             type="file"
                                             accept="image/*"
+                                            multiple
                                             title=""
                                             style={{
                                                 position: 'absolute',
@@ -535,8 +705,8 @@ const MenuTab = () => {
                                                 zIndex: 10
                                             }}
                                             onChange={(e) => {
-                                                if (e.target.files?.[0]) {
-                                                    handleImageUpload(e.target.files[0]);
+                                                if (e.target.files?.length) {
+                                                    handleImageUpload(e.target.files);
                                                 }
                                                 e.target.value = '';
                                             }}
@@ -551,22 +721,39 @@ const MenuTab = () => {
                                                 <div className="db-progress-fill" style={{ width: `${uploadProgress}%` }} />
                                             </div>
                                         </div>
-                                    ) : form.image ? (
+                                    ) : (form.images?.length > 0) ? (
                                         <div className="db-upload-preview">
-                                            <img src={form.image} alt="Preview" />
-                                            <div className="db-upload-overlay">
+                                            <img src={form.images[0]} alt="Preview" />
+                                            <div className="db-upload-overlay" style={{ pointerEvents: 'none' }}>
                                                 <ImagePlus size={20} />
-                                                <span>Click or drag to replace</span>
+                                                <span>Click or drag to add more</span>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="db-upload-placeholder">
                                             <Upload size={28} color="#94a3b8" />
                                             <p><strong>Click to upload</strong> or drag & drop</p>
-                                            <span>JPG, PNG, WebP — max 10 MB</span>
+                                            <span>Multiple images (up to {MAX_IMAGES_PER_ITEM}) • max 10 MB each</span>
                                         </div>
                                     )}
                                 </div>
+                                {form.images?.length > 0 && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '8px', marginTop: '10px' }}>
+                                        {form.images.map((url, idx) => (
+                                            <div key={`${url}-${idx}`} style={{ position: 'relative', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', height: '70px' }}>
+                                                <img src={url} alt={`Item ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImageAt(idx)}
+                                                    title="Remove image"
+                                                    style={{ position: 'absolute', top: '4px', right: '4px', border: 'none', background: 'rgba(15,23,42,0.75)', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', cursor: 'pointer', lineHeight: 1 }}
+                                                >
+                                                    x
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="db-form-checks">
                                 <label className="db-check-label">
@@ -576,6 +763,10 @@ const MenuTab = () => {
                                 <label className="db-check-label">
                                     <input type="checkbox" name="isVeg" checked={form.attributes.isVeg} onChange={handleChange} />
                                     <span>Veg</span>
+                                </label>
+                                <label className="db-check-label">
+                                    <input type="checkbox" name="isNonVeg" checked={form.attributes.isNonVeg} onChange={handleChange} />
+                                    <span>Non-Veg</span>
                                 </label>
                                 <label className="db-check-label">
                                     <input type="checkbox" name="isSpicy" checked={form.attributes.isSpicy} onChange={handleChange} />
@@ -625,18 +816,32 @@ const MenuTab = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map(item => (
+                            {filtered.map(item => {
+                                const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
+                                return (
                                 <tr key={item._id}>
                                     <td>
-                                        <img src={item.image} alt={item.name} className="db-menu-img" />
+                                        <img src={primaryImage} alt={item.name} className="db-menu-img" />
                                     </td>
                                     <td>
                                         <strong className="db-menu-name">{item.name}</strong>
                                         <p className="db-menu-desc">{item.description?.slice(0, 60)}{item.description?.length > 60 ? '...' : ''}</p>
+                                        {!!(item.addOns?.length) && (
+                                            <p className="db-menu-desc" style={{ marginTop: '4px' }}>
+                                                Add-ons: {item.addOns.length}
+                                            </p>
+                                        )}
                                     </td>
                                     <td><span className="db-cat-pill">{item.category}</span></td>
                                     <td><span className="db-cat-pill">{item.size || 'Regular'}</span></td>
-                                    <td className="db-price">₹{Number(item.price).toFixed(2)}</td>
+                                    <td className="db-price">
+                                        ₹{Number(item.price).toFixed(2)}
+                                        {(item.mrp !== null && item.mrp !== undefined && Number(item.mrp) > Number(item.price)) && (
+                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                <s>₹{Number(item.mrp).toFixed(2)}</s> ({Math.round(((Number(item.mrp) - Number(item.price)) / Number(item.mrp)) * 100)}% OFF)
+                                            </div>
+                                        )}
+                                    </td>
                                     <td>
                                         <span className={`db-avail-dot ${item.isAvailable !== false ? 'avail-yes' : 'avail-no'}`}>
                                             {item.isAvailable !== false ? 'Available' : 'Unavailable'}
@@ -645,6 +850,7 @@ const MenuTab = () => {
                                     <td>
                                         <div className="db-tags">
                                             {item.attributes?.isVeg && <span className="db-tag tag-veg">Veg</span>}
+                                            {item.attributes?.isNonVeg && <span className="db-tag tag-spicy">Non-Veg</span>}
                                             {item.attributes?.isSpicy && <span className="db-tag tag-spicy">Spicy</span>}
                                         </div>
                                     </td>
@@ -659,7 +865,8 @@ const MenuTab = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

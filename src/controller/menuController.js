@@ -1,12 +1,64 @@
 const Menu = require("../models/menu/menuSchema");
 
+const normalizeImagePayload = (body = {}) => {
+    const normalized = { ...body };
+
+    let images = [];
+    if (Array.isArray(normalized.images)) {
+        images = normalized.images;
+    } else if (typeof normalized.images === "string") {
+        images = [normalized.images];
+    }
+
+    images = images
+        .map(url => (typeof url === "string" ? url.trim() : ""))
+        .filter(Boolean);
+
+    if (images.length === 0 && typeof normalized.image === "string" && normalized.image.trim()) {
+        images = [normalized.image.trim()];
+    }
+
+    normalized.images = images;
+    normalized.image = images[0] || normalized.image;
+
+    if (normalized.price !== undefined && normalized.price !== null && normalized.price !== "") {
+        normalized.price = Number(normalized.price);
+    }
+
+    if (normalized.mrp === "" || normalized.mrp === undefined) {
+        normalized.mrp = null;
+    } else if (normalized.mrp !== null) {
+        normalized.mrp = Number(normalized.mrp);
+    }
+
+    if (Array.isArray(normalized.addOns)) {
+        normalized.addOns = normalized.addOns
+            .map((addOn) => {
+                const name = typeof addOn?.name === "string" ? addOn.name.trim() : "";
+                const price = Number(addOn?.price);
+                if (!name || !Number.isFinite(price) || price < 0) return null;
+                return {
+                    name,
+                    price,
+                    isAvailable: addOn?.isAvailable !== false
+                };
+            })
+            .filter(Boolean);
+    } else {
+        normalized.addOns = [];
+    }
+
+    return normalized;
+};
+
 exports.createMenuItem = async (req, res) => {
     try {
         const restaurantId = req.user.restaurant || req.body.restaurant;
         if (!restaurantId) {
             return res.status(400).json({ success: false, message: "Restaurant reference is required" });
         }
-        const { sizes, sizePrices, ...rest } = req.body;
+        const normalizedBody = normalizeImagePayload(req.body);
+        const { sizes, sizePrices, ...rest } = normalizedBody;
         const payload = { ...rest, restaurant: restaurantId };
 
         if (sizePrices && typeof sizePrices === "object" && !Array.isArray(sizePrices)) {
@@ -107,10 +159,11 @@ exports.updateMenuById = async (req, res) => {
         if (!restaurantId) {
             return res.status(400).json({ success: false, message: "Restaurant reference is required" });
         }
+        const payload = normalizeImagePayload(req.body);
         // Ensure user belongs to this restaurant
         const updatedItem = await Menu.findOneAndUpdate(
             { _id: req.params.id, restaurant: restaurantId },
-            req.body,
+            payload,
             { new: true, runValidators: true }
         );
         if (!updatedItem) {

@@ -1,5 +1,18 @@
 const mongoose = require("mongoose");
 
+const orderItemAddOnSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    price: {
+        type: Number,
+        required: true,
+        min: 0
+    }
+}, { _id: false });
+
 const orderItemSchema = new mongoose.Schema({
     menuItem: {
         type: mongoose.Schema.Types.ObjectId,
@@ -18,6 +31,10 @@ const orderItemSchema = new mongoose.Schema({
     priceAtOrderTime: {
         type: Number,
         required: true
+    },
+    addOns: {
+        type: [orderItemAddOnSchema],
+        default: []
     }
 });
 

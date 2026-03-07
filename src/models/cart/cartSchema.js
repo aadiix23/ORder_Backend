@@ -1,5 +1,18 @@
 const mongoose = require("mongoose");
 
+const cartItemAddOnSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    price: {
+        type: Number,
+        required: true,
+        min: 0
+    }
+}, { _id: false });
+
 const cartItemSchema = new mongoose.Schema({
     menuItem: {
         type: mongoose.Schema.Types.ObjectId,
@@ -14,6 +27,10 @@ const cartItemSchema = new mongoose.Schema({
     notes: {
         type: String,
         trim: true
+    },
+    addOns: {
+        type: [cartItemAddOnSchema],
+        default: []
     }
 });
 const cartSchema = new mongoose.Schema({

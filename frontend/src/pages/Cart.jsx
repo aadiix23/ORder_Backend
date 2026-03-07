@@ -46,13 +46,14 @@ const Cart = () => {
         }
     };
 
-    const updateQuantity = async (menuItemId, currentQty, delta) => {
+    const updateQuantity = async (cartItemId, menuItemId, currentQty, delta) => {
         const newQty = currentQty + delta;
         if (newQty < 1) return;
         try {
             await cartApi.update({
                 tableNumber: tableNumber,
                 restaurantId,
+                cartItemId,
                 menuItemId,
                 quantity: newQty
             });
@@ -62,11 +63,12 @@ const Cart = () => {
         }
     };
 
-    const removeItem = async (menuItemId) => {
+    const removeItem = async (cartItemId, menuItemId) => {
         try {
             await cartApi.remove({
                 tableNumber: tableNumber,
                 restaurantId,
+                cartItemId,
                 menuItemId
             });
             fetchCart();
@@ -178,7 +180,7 @@ const Cart = () => {
                         <AnimatePresence>
                             {cart.items.map(item => (
                                 <motion.div
-                                    key={item.menuItem._id}
+                                    key={item._id}
                                     layout
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -187,8 +189,8 @@ const Cart = () => {
                                 >
                                     {item.menuItem && (
                                         <>
-                                            {item.menuItem.image ? (
-                                                <img src={item.menuItem.image} alt={item.menuItem.name} className="cart-item-img" />
+                                            {((item.menuItem.images && item.menuItem.images[0]) || item.menuItem.image) ? (
+                                                <img src={(item.menuItem.images && item.menuItem.images[0]) || item.menuItem.image} alt={item.menuItem.name} className="cart-item-img" />
                                             ) : (
                                                 <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <UtensilsCrossed size={32} color="rgba(0,0,0,0.1)" />
@@ -197,20 +199,27 @@ const Cart = () => {
 
                                             <div className="cart-item-info">
                                                 <h3>{item.menuItem.name}</h3>
-                                                <p>₹{item.menuItem.price}</p>
+                                                <p>
+                                                    ₹{((Number(item.menuItem.price) || 0) + (item.addOns || []).reduce((sum, addOn) => sum + (Number(addOn.price) || 0), 0)).toFixed(2)}
+                                                </p>
+                                                {(item.addOns || []).length > 0 && (
+                                                    <p style={{ marginTop: '6px', fontSize: '0.8rem', color: '#64748b' }}>
+                                                        + {item.addOns.map(addOn => `${addOn.name} (₹${Number(addOn.price || 0).toFixed(2)})`).join(', ')}
+                                                    </p>
+                                                )}
                                             </div>
 
                                             <div className="cart-qty-wrap">
-                                                <button className="qty-btn" onClick={() => updateQuantity(item.menuItem._id, item.quantity, -1)}>
+                                                <button className="qty-btn" onClick={() => updateQuantity(item._id, item.menuItem._id, item.quantity, -1)}>
                                                     <Minus size={18} />
                                                 </button>
                                                 <span style={{ fontWeight: '800', minWidth: '20px', textAlign: 'center', color: '#1a1a2e' }}>{item.quantity}</span>
-                                                <button className="qty-btn" onClick={() => updateQuantity(item.menuItem._id, item.quantity, 1)}>
+                                                <button className="qty-btn" onClick={() => updateQuantity(item._id, item.menuItem._id, item.quantity, 1)}>
                                                     <Plus size={18} />
                                                 </button>
                                             </div>
 
-                                            <button className="cart-remove-btn" onClick={() => removeItem(item.menuItem._id)}>
+                                            <button className="cart-remove-btn" onClick={() => removeItem(item._id, item.menuItem._id)}>
                                                 <Trash2 size={20} />
                                             </button>
                                         </>

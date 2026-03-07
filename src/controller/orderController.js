@@ -35,11 +35,15 @@ exports.placeOrder = async (req, res) => {
                     throw new Error("Menu Item Is Not Found");
                 };
 
+                const addOns = Array.isArray(item.addOns) ? item.addOns : [];
+                const addOnsTotal = addOns.reduce((sum, addOn) => sum + (Number(addOn.price) || 0), 0);
+
                 return {
                     menuItem: item.menuItem,
                     quantity: item.quantity,
                     notes: item.notes,
-                    priceAtOrderTime: menuItem.price
+                    addOns,
+                    priceAtOrderTime: (Number(menuItem.price) || 0) + addOnsTotal
                 }
             })
         )
