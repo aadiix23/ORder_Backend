@@ -1,6 +1,7 @@
 const Restaurant = require("../models/restaurant/restaurantSchema");
 
 const normalizeTableNumber = (tableNumber) => String(tableNumber || "").trim();
+const isHexColor = (value) => typeof value === "string" && /^#([0-9a-fA-F]{6})$/.test(value.trim());
 
 exports.getRestaurantById = async (req, res) => {
     try {
@@ -137,6 +138,67 @@ exports.updateRestaurantDetails = async (req, res) => {
             success: true,
             message: "Restaurant details updated successfully",
             data: restaurant
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.updateMenuUiConfig = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (String(req.user.restaurant) !== String(id)) {
+            return res.status(403).json({ success: false, message: "Unauthorized for this restaurant" });
+        }
+
+        const restaurant = await Restaurant.findById(id);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        const current = restaurant.menuUi || {};
+        const {
+            primaryColor,
+            accentColor,
+            backgroundColor,
+            heroTagline,
+            showRatings,
+            showFavorites,
+            cardRadius
+        } = req.body;
+
+        if (primaryColor !== undefined) {
+            if (!isHexColor(primaryColor)) return res.status(400).json({ success: false, message: "Invalid primary color" });
+            current.primaryColor = primaryColor.trim();
+        }
+        if (accentColor !== undefined) {
+            if (!isHexColor(accentColor)) return res.status(400).json({ success: false, message: "Invalid accent color" });
+            current.accentColor = accentColor.trim();
+        }
+        if (backgroundColor !== undefined) {
+            if (!isHexColor(backgroundColor)) return res.status(400).json({ success: false, message: "Invalid background color" });
+            current.backgroundColor = backgroundColor.trim();
+        }
+        if (heroTagline !== undefined) {
+            current.heroTagline = String(heroTagline || "").trim().slice(0, 120);
+        }
+        if (typeof showRatings === "boolean") current.showRatings = showRatings;
+        if (typeof showFavorites === "boolean") current.showFavorites = showFavorites;
+        if (cardRadius !== undefined) {
+            const parsedRadius = Number(cardRadius);
+            if (!Number.isFinite(parsedRadius) || parsedRadius < 8 || parsedRadius > 28) {
+                return res.status(400).json({ success: false, message: "Card radius must be between 8 and 28" });
+            }
+            current.cardRadius = parsedRadius;
+        }
+
+        restaurant.menuUi = current;
+        await restaurant.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Menu UI customization updated successfully",
+            data: restaurant.menuUi
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

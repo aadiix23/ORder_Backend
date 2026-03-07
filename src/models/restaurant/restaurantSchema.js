@@ -16,6 +16,16 @@ const tableStatusSchema = new mongoose.Schema({
     }
 }, { _id: false });
 
+const menuUiSchema = new mongoose.Schema({
+    primaryColor: { type: String, default: "#e63946" },
+    accentColor: { type: String, default: "#f59e0b" },
+    backgroundColor: { type: String, default: "#fafafa" },
+    heroTagline: { type: String, default: "" },
+    showRatings: { type: Boolean, default: true },
+    showFavorites: { type: Boolean, default: true },
+    cardRadius: { type: Number, default: 16, min: 8, max: 28 }
+}, { _id: false });
+
 const restaurantSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -52,6 +62,10 @@ const restaurantSchema = new mongoose.Schema({
     tableStatuses: {
         type: [tableStatusSchema],
         default: []
+    },
+    menuUi: {
+        type: menuUiSchema,
+        default: () => ({})
     }
 }, { timestamps: true });
 

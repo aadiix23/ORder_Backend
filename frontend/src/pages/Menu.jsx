@@ -235,9 +235,20 @@ const Menu = () => {
     }
 
     const brandName = restaurant?.name || 'QRder';
+    const menuUi = restaurant?.menuUi || {};
+    const showRatings = menuUi.showRatings !== false;
+    const showFavorites = menuUi.showFavorites !== false;
+    const menuRootStyle = {
+        '--menu-primary': menuUi.primaryColor || '#e63946',
+        '--menu-primary-dark': menuUi.primaryColor || '#e63946',
+        '--menu-primary-light': menuUi.primaryColor || '#e63946',
+        '--menu-accent': menuUi.accentColor || '#f59e0b',
+        '--menu-bg': menuUi.backgroundColor || '#fafafa',
+        '--menu-card-radius': `${Number(menuUi.cardRadius) || 16}px`
+    };
 
     return (
-        <div className="menu-page-root">
+        <div className="menu-page-root" style={menuRootStyle}>
             {/* Brand Header — Foodgo Style */}
             <motion.div
                 className="menu-brand-header"
@@ -247,7 +258,7 @@ const Menu = () => {
             >
                 <div className="menu-brand-left">
                     <h1>{brandName}</h1>
-                    <p>Table #{tableNumber} — Order your favourite food!</p>
+                    <p>{menuUi.heroTagline || `Table #${tableNumber} — Order your favourite food!`}</p>
                 </div>
                 <div className="menu-brand-avatar">
                     {brandName.charAt(0)}
@@ -351,19 +362,25 @@ const Menu = () => {
                                         <div className="menu-card-price-tag">₹{Number(item.price).toFixed(0)}</div>
 
                                         {/* Rating & Heart */}
-                                        <div className="menu-card-footer">
-                                            <div className="menu-card-rating">
-                                                <Star size={14} className="star-icon" fill="#f59e0b" stroke="#f59e0b" />
-                                                <span>{rating}</span>
+                                        {(showRatings || showFavorites) && (
+                                            <div className="menu-card-footer">
+                                                {showRatings ? (
+                                                    <div className="menu-card-rating">
+                                                        <Star size={14} className="star-icon" fill="#f59e0b" stroke="#f59e0b" />
+                                                        <span>{rating}</span>
+                                                    </div>
+                                                ) : <div />}
+                                                {showFavorites && (
+                                                    <button
+                                                        className="menu-card-heart"
+                                                        aria-label="Favorite"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Heart size={18} />
+                                                    </button>
+                                                )}
                                             </div>
-                                            <button
-                                                className="menu-card-heart"
-                                                aria-label="Favorite"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Heart size={18} />
-                                            </button>
-                                        </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             );
@@ -468,13 +485,15 @@ const Menu = () => {
                                 <h1 className="pd-title">{item.name}</h1>
 
                                 {/* Rating + Time */}
-                                <div className="pd-meta">
-                                    <Star size={16} className="star" fill="#f59e0b" stroke="#f59e0b" />
-                                    <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{getRating(item)}</span>
-                                    <span style={{ color: '#ccc' }}>—</span>
-                                    <Clock size={14} />
-                                    <span>20 mins</span>
-                                </div>
+                                {showRatings && (
+                                    <div className="pd-meta">
+                                        <Star size={16} className="star" fill="#f59e0b" stroke="#f59e0b" />
+                                        <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{getRating(item)}</span>
+                                        <span style={{ color: '#ccc' }}>—</span>
+                                        <Clock size={14} />
+                                        <span>20 mins</span>
+                                    </div>
+                                )}
 
                                 {/* Description */}
                                 <p className="pd-description">{item.description}</p>

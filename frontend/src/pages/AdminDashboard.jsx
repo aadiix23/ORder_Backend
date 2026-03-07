@@ -20,7 +20,8 @@ import {
     Upload,
     ImagePlus,
     QrCode,
-    Power
+    Power,
+    Palette
 } from 'lucide-react';
 import { orderApi, menuApi, uploadApi, restaurantApi } from '../api/api';
 import { io } from 'socket.io-client';
@@ -1233,6 +1234,144 @@ const TableControlTab = () => {
 };
 
 /* ============================
+   MENU CUSTOMIZATION TAB
+   ============================ */
+const MenuCustomizationTab = () => {
+    const restaurantId = localStorage.getItem('restaurantId');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [form, setForm] = useState({
+        primaryColor: '#e63946',
+        accentColor: '#f59e0b',
+        backgroundColor: '#fafafa',
+        heroTagline: '',
+        showRatings: true,
+        showFavorites: true,
+        cardRadius: 16
+    });
+
+    const fetchConfig = async () => {
+        if (!restaurantId) return;
+        setLoading(true);
+        setError('');
+        try {
+            const res = await restaurantApi.getById(restaurantId);
+            const ui = res?.data?.data?.menuUi || {};
+            setForm(prev => ({
+                ...prev,
+                ...ui
+            }));
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to load customization.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchConfig();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [restaurantId]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setError('');
+        setSuccess('');
+        try {
+            await restaurantApi.updateMenuUi(restaurantId, form);
+            setSuccess('Menu customization saved.');
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to save customization.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="db-panel db-state">
+                <Loader2 size={42} className="animate-spin" color="#7c3aed" />
+                <p>Loading menu customization...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="db-panel" style={{ padding: '24px' }}>
+            <div className="db-topbar" style={{ marginBottom: '16px' }}>
+                <div>
+                    <h1>Menu Customization</h1>
+                    <p>Customize your customer menu look and behavior.</p>
+                </div>
+            </div>
+
+            {error && <div className="auth-error" style={{ marginBottom: '12px' }}>{error}</div>}
+            {success && <div className="db-success-toast" style={{ marginBottom: '12px' }}><Check size={16} /> {success}</div>}
+
+            <form onSubmit={handleSubmit} className="db-menu-form">
+                <div className="db-form-row">
+                    <div className="db-form-field">
+                        <label>Primary Color</label>
+                        <input type="color" value={form.primaryColor} onChange={(e) => setForm(prev => ({ ...prev, primaryColor: e.target.value }))} />
+                    </div>
+                    <div className="db-form-field">
+                        <label>Accent Color</label>
+                        <input type="color" value={form.accentColor} onChange={(e) => setForm(prev => ({ ...prev, accentColor: e.target.value }))} />
+                    </div>
+                    <div className="db-form-field">
+                        <label>Background Color</label>
+                        <input type="color" value={form.backgroundColor} onChange={(e) => setForm(prev => ({ ...prev, backgroundColor: e.target.value }))} />
+                    </div>
+                </div>
+
+                <div className="db-form-field">
+                    <label>Hero Tagline</label>
+                    <input
+                        type="text"
+                        maxLength={120}
+                        value={form.heroTagline}
+                        onChange={(e) => setForm(prev => ({ ...prev, heroTagline: e.target.value }))}
+                        placeholder="Optional custom tagline under restaurant name"
+                    />
+                </div>
+
+                <div className="db-form-field">
+                    <label>Card Radius ({form.cardRadius}px)</label>
+                    <input
+                        type="range"
+                        min="8"
+                        max="28"
+                        value={form.cardRadius}
+                        onChange={(e) => setForm(prev => ({ ...prev, cardRadius: Number(e.target.value) }))}
+                    />
+                </div>
+
+                <div className="db-form-checks">
+                    <label className="db-check-label">
+                        <input type="checkbox" checked={form.showRatings} onChange={(e) => setForm(prev => ({ ...prev, showRatings: e.target.checked }))} />
+                        <span>Show Ratings</span>
+                    </label>
+                    <label className="db-check-label">
+                        <input type="checkbox" checked={form.showFavorites} onChange={(e) => setForm(prev => ({ ...prev, showFavorites: e.target.checked }))} />
+                        <span>Show Favorite Icon</span>
+                    </label>
+                </div>
+
+                <div className="db-form-actions">
+                    <button type="button" className="lp-btn-outline" onClick={fetchConfig}>Reset</button>
+                    <button type="submit" className="lp-btn-primary" disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Customization'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+/* ============================
    SETTINGS TAB
    ============================ */
 const SettingsTab = ({ onRestaurantUpdated }) => {
@@ -1529,6 +1668,7 @@ const AdminDashboard = () => {
         { icon: <UtensilsCrossed size={18} />, label: 'Menu', key: 'menu', allowed: ['admin'] },
         { icon: <QrCode size={18} />, label: 'QR Generator', key: 'qr', allowed: ['admin'] },
         { icon: <Power size={18} />, label: 'Table Control', key: 'table-control', allowed: ['admin'] },
+        { icon: <Palette size={18} />, label: 'Menu Customization', key: 'menu-customization', allowed: ['admin'] },
         { icon: <Settings size={18} />, label: 'Settings', key: 'settings', allowed: ['admin'] }
     ].filter(item => item.allowed.includes(role));
 
@@ -1578,6 +1718,7 @@ const AdminDashboard = () => {
                 {activeTab === 'menu' && <MenuTab />}
                 {activeTab === 'qr' && <QRTab />}
                 {activeTab === 'table-control' && <TableControlTab />}
+                {activeTab === 'menu-customization' && <MenuCustomizationTab />}
                 {activeTab === 'settings' && <SettingsTab onRestaurantUpdated={fetchRestaurantName} />}
             </section>
         </div>
