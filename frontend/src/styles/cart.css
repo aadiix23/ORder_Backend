@@ -228,6 +228,15 @@
     margin: 0 0 18px;
 }
 
+.summary-subtitle {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #444;
+    margin: 8px 0 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .summary-line {
     display: flex;
     justify-content: space-between;
@@ -244,6 +253,17 @@
 .summary-line .value {
     color: #1a1a2e;
     font-weight: 600;
+}
+
+.summary-line-muted .label,
+.summary-line-muted .value {
+    color: #8f8f8f;
+}
+
+.summary-line-positive .label,
+.summary-line-positive .value {
+    color: #1e9b50;
+    font-weight: 700;
 }
 
 .summary-divider {

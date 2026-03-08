@@ -40,6 +40,7 @@ exports.placeOrder = async (req, res) => {
         }
 
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
+        const restaurant = await Restaurant.findById(restaurantId).select("billingSettings");
 
         if (!cart || cart.items.length === 0) {
             return res.status(400).json({
@@ -69,13 +70,22 @@ exports.placeOrder = async (req, res) => {
             })
         )
 
+        const itemsSubtotal = orderItems.reduce(
+            (sum, item) => sum + ((Number(item.priceAtOrderTime) || 0) * (Number(item.quantity) || 0)),
+            0
+        );
+        const taxPercent = Number(restaurant?.billingSettings?.taxPercent) || 0;
+        const otherCharges = Number(restaurant?.billingSettings?.otherCharges) || 0;
+        const taxAmount = (itemsSubtotal * taxPercent) / 100;
+        const totalPrice = Number((itemsSubtotal + taxAmount + otherCharges).toFixed(2));
+
         const order = await Order.create({
             tableNumber: normalizedTableNumber,
             customerPhone: customerPhone || null,
             customerName: customerName || null,
             restaurant: restaurantId,
             items: orderItems,
-            totalPrice: cart.totalPrice
+            totalPrice
         });
 
         // 🔥 SOCKET CHANGE 1: Emit new order to Specific Restaurant Admin

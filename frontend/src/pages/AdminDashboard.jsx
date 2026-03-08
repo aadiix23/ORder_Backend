@@ -1445,7 +1445,10 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
         name: '',
         address: '',
         contactNumber: '',
-        logo: ''
+        logo: '',
+        taxPercent: '0',
+        otherCharges: '0',
+        otherChargesLabel: 'Other Charges'
     });
 
     const fetchRestaurant = async () => {
@@ -1459,7 +1462,10 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
                 name: data.name || '',
                 address: data.address || '',
                 contactNumber: data.contactNumber || '',
-                logo: data.logo || ''
+                logo: data.logo || '',
+                taxPercent: String(Number(data?.billingSettings?.taxPercent) || 0),
+                otherCharges: String(Number(data?.billingSettings?.otherCharges) || 0),
+                otherChargesLabel: data?.billingSettings?.otherChargesLabel || 'Other Charges'
             });
         } catch (err) {
             setError(err?.response?.data?.message || 'Failed to load restaurant details.');
@@ -1501,11 +1507,26 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
         setError('');
         setSuccess('');
         try {
+            const parsedTaxPercent = Number(form.taxPercent);
+            const parsedOtherCharges = Number(form.otherCharges);
+            if (!Number.isFinite(parsedTaxPercent) || parsedTaxPercent < 0 || parsedTaxPercent > 100) {
+                setError('Tax percent must be between 0 and 100.');
+                setSaving(false);
+                return;
+            }
+            if (!Number.isFinite(parsedOtherCharges) || parsedOtherCharges < 0) {
+                setError('Other charges must be 0 or more.');
+                setSaving(false);
+                return;
+            }
             const payload = {
                 name: form.name.trim(),
                 address: form.address.trim(),
                 contactNumber: form.contactNumber.trim(),
-                logo: form.logo.trim()
+                logo: form.logo.trim(),
+                taxPercent: parsedTaxPercent,
+                otherCharges: parsedOtherCharges,
+                otherChargesLabel: String(form.otherChargesLabel || '').trim() || 'Other Charges'
             };
             await restaurantApi.updateDetails(restaurantId, payload);
             setSuccess('Restaurant details updated successfully.');
@@ -1531,7 +1552,7 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
             <div className="db-topbar" style={{ marginBottom: '16px' }}>
                 <div>
                     <h1>Restaurant Settings</h1>
-                    <p>Update your restaurant details and logo.</p>
+                    <p>Update restaurant details, logo, and bill charges.</p>
                 </div>
             </div>
 
@@ -1567,6 +1588,43 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
                         value={form.contactNumber}
                         onChange={(e) => setForm(prev => ({ ...prev, contactNumber: e.target.value }))}
                         placeholder="e.g. +91 9876543210"
+                    />
+                </div>
+
+                <div className="db-form-row">
+                    <div className="db-form-field">
+                        <label>Tax (%)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={form.taxPercent}
+                            onChange={(e) => setForm(prev => ({ ...prev, taxPercent: e.target.value }))}
+                            placeholder="e.g. 5"
+                        />
+                    </div>
+                    <div className="db-form-field">
+                        <label>Other Charges (₹)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={form.otherCharges}
+                            onChange={(e) => setForm(prev => ({ ...prev, otherCharges: e.target.value }))}
+                            placeholder="e.g. 20"
+                        />
+                    </div>
+                </div>
+
+                <div className="db-form-field">
+                    <label>Other Charges Label</label>
+                    <input
+                        type="text"
+                        maxLength={80}
+                        value={form.otherChargesLabel}
+                        onChange={(e) => setForm(prev => ({ ...prev, otherChargesLabel: e.target.value }))}
+                        placeholder="e.g. Service Charge"
                     />
                 </div>
 

@@ -26,6 +26,26 @@ const menuUiSchema = new mongoose.Schema({
     cardRadius: { type: Number, default: 16, min: 8, max: 28 }
 }, { _id: false });
 
+const billingSettingsSchema = new mongoose.Schema({
+    taxPercent: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
+    otherCharges: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    otherChargesLabel: {
+        type: String,
+        default: "Other Charges",
+        trim: true,
+        maxLength: 80
+    }
+}, { _id: false });
+
 const restaurantSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -65,6 +85,10 @@ const restaurantSchema = new mongoose.Schema({
     },
     menuUi: {
         type: menuUiSchema,
+        default: () => ({})
+    },
+    billingSettings: {
+        type: billingSettingsSchema,
         default: () => ({})
     }
 }, { timestamps: true });

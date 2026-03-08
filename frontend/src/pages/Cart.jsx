@@ -117,12 +117,31 @@ const Cart = () => {
         }
     };
 
-    // Compute totals
-    const subtotal = cart?.items?.reduce((acc, item) => {
+    // Compute totals for detailed bill preview
+    const itemBaseTotal = cart?.items?.reduce((acc, item) => {
         const base = Number(item?.menuItem?.price) || 0;
-        const addOnTotal = (item?.addOns || []).reduce((sum, a) => sum + (Number(a?.price) || 0), 0);
-        return acc + (item.quantity * (base + addOnTotal));
+        return acc + (item.quantity * base);
     }, 0) || 0;
+
+    const addOnsTotal = cart?.items?.reduce((acc, item) => {
+        const addOnTotal = (item?.addOns || []).reduce((sum, a) => sum + (Number(a?.price) || 0), 0);
+        return acc + (item.quantity * addOnTotal);
+    }, 0) || 0;
+
+    const mrpTotal = cart?.items?.reduce((acc, item) => {
+        const base = Number(item?.menuItem?.price) || 0;
+        const mrp = Number(item?.menuItem?.mrp);
+        const effectiveMrp = Number.isFinite(mrp) && mrp > base ? mrp : base;
+        return acc + (item.quantity * effectiveMrp);
+    }, 0) || 0;
+
+    const subtotal = itemBaseTotal + addOnsTotal;
+    const totalSavings = Math.max(mrpTotal - itemBaseTotal, 0);
+    const taxPercent = Number(cart?.billingSettings?.taxPercent) || 0;
+    const otherCharges = Number(cart?.billingSettings?.otherCharges) || 0;
+    const otherChargesLabel = cart?.billingSettings?.otherChargesLabel || 'Other Charges';
+    const taxAmount = (subtotal * taxPercent) / 100;
+    const grandTotal = subtotal + taxAmount + otherCharges;
 
     const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
 
@@ -268,9 +287,33 @@ const Cart = () => {
                             <span className="value">#{tableNumber}</span>
                         </div>
                         <hr className="summary-divider" />
+                        <h4 className="summary-subtitle">Bill details</h4>
+                        <div className="summary-line">
+                            <span className="label">Food items</span>
+                            <span className="value">₹{itemBaseTotal.toFixed(0)}</span>
+                        </div>
+                        <div className="summary-line">
+                            <span className="label">Add-ons</span>
+                            <span className="value">₹{addOnsTotal.toFixed(0)}</span>
+                        </div>
+                        {totalSavings > 0 && (
+                            <div className="summary-line summary-line-positive">
+                                <span className="label">Savings</span>
+                                <span className="value">-₹{totalSavings.toFixed(0)}</span>
+                            </div>
+                        )}
+                        <div className="summary-line summary-line-muted">
+                            <span className="label">Tax {taxPercent > 0 ? `(${taxPercent.toFixed(2)}%)` : ''}</span>
+                            <span className="value">₹{taxAmount.toFixed(0)}</span>
+                        </div>
+                        <div className="summary-line summary-line-muted">
+                            <span className="label">{otherChargesLabel}</span>
+                            <span className="value">₹{otherCharges.toFixed(0)}</span>
+                        </div>
+                        <hr className="summary-divider" />
                         <div className="summary-total-line">
                             <span className="label">Total:</span>
-                            <span className="value">₹{subtotal.toFixed(0)}</span>
+                            <span className="value">₹{grandTotal.toFixed(0)}</span>
                         </div>
                         <div className="summary-delivery-time">
                             <span>Estimated preparation:</span>
@@ -304,7 +347,7 @@ const Cart = () => {
                     <div className="cart-order-bar">
                         <div className="cart-order-price">
                             <div className="total-label">Total price</div>
-                            <div className="total-value">₹{subtotal.toFixed(0)}</div>
+                            <div className="total-value">₹{grandTotal.toFixed(0)}</div>
                         </div>
                         <button
                             className="cart-order-btn"

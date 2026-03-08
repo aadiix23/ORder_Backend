@@ -97,7 +97,7 @@ exports.updateTableStatus = async (req, res) => {
 exports.updateRestaurantDetails = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, address, contactNumber, logo } = req.body;
+        const { name, address, contactNumber, logo, taxPercent, otherCharges, otherChargesLabel } = req.body;
 
         if (String(req.user.restaurant) !== String(id)) {
             return res.status(403).json({ success: false, message: "Unauthorized for this restaurant" });
@@ -130,6 +130,30 @@ exports.updateRestaurantDetails = async (req, res) => {
 
         if (typeof logo === "string") {
             restaurant.logo = logo.trim();
+        }
+
+        if (taxPercent !== undefined) {
+            const parsedTax = Number(taxPercent);
+            if (!Number.isFinite(parsedTax) || parsedTax < 0 || parsedTax > 100) {
+                return res.status(400).json({ success: false, message: "Tax percent must be between 0 and 100" });
+            }
+            if (!restaurant.billingSettings) restaurant.billingSettings = {};
+            restaurant.billingSettings.taxPercent = parsedTax;
+        }
+
+        if (otherCharges !== undefined) {
+            const parsedOtherCharges = Number(otherCharges);
+            if (!Number.isFinite(parsedOtherCharges) || parsedOtherCharges < 0) {
+                return res.status(400).json({ success: false, message: "Other charges must be a valid number greater than or equal to 0" });
+            }
+            if (!restaurant.billingSettings) restaurant.billingSettings = {};
+            restaurant.billingSettings.otherCharges = parsedOtherCharges;
+        }
+
+        if (otherChargesLabel !== undefined) {
+            const normalizedLabel = String(otherChargesLabel || "").trim();
+            if (!restaurant.billingSettings) restaurant.billingSettings = {};
+            restaurant.billingSettings.otherChargesLabel = normalizedLabel || "Other Charges";
         }
 
         await restaurant.save();
