@@ -216,6 +216,11 @@ exports.updateItemByCart = async (req, res) => {
             return res.status(400).json({ success: false, message: "Valid table number, restaurant ID, cart item ID/menu item ID, and quantity (>=1) are required" });
         }
 
+        const tableCheck = await ensureTableIsActive(restaurantId, normalizedTableNumber);
+        if (!tableCheck.ok) {
+            return res.status(403).json({ success: false, message: tableCheck.message });
+        }
+
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
 
         if (!cart) {
@@ -260,6 +265,11 @@ exports.removeItemFromCart = async (req, res) => {
             return res.status(400).json({ success: false, message: "Restaurant ID, table number, and cart item ID/menu item ID are required" });
         }
 
+        const tableCheck = await ensureTableIsActive(restaurantId, normalizedTableNumber);
+        if (!tableCheck.ok) {
+            return res.status(403).json({ success: false, message: tableCheck.message });
+        }
+
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });
         if (!cart) {
             return res.status(404).json({
@@ -293,6 +303,11 @@ exports.clearCart = async (req, res) => {
 
         if (!restaurantId || !normalizedTableNumber) {
             return res.status(400).json({ success: false, message: "Restaurant ID and table number are required" });
+        }
+
+        const tableCheck = await ensureTableIsActive(restaurantId, normalizedTableNumber);
+        if (!tableCheck.ok) {
+            return res.status(403).json({ success: false, message: tableCheck.message });
         }
 
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId });

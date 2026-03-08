@@ -1,31 +1,44 @@
 const Menu = require("../models/menu/menuSchema");
 
-const normalizeImagePayload = (body = {}) => {
+const normalizeImagePayload = (body = {}, options = {}) => {
+    const { forUpdate = false } = options;
     const normalized = { ...body };
 
-    let images = [];
-    if (Array.isArray(normalized.images)) {
-        images = normalized.images;
-    } else if (typeof normalized.images === "string") {
-        images = [normalized.images];
+    const hasImagesField = Object.prototype.hasOwnProperty.call(normalized, "images");
+    const hasImageField = Object.prototype.hasOwnProperty.call(normalized, "image");
+    if (!forUpdate || hasImagesField || hasImageField) {
+        let images = [];
+        if (Array.isArray(normalized.images)) {
+            images = normalized.images;
+        } else if (typeof normalized.images === "string") {
+            images = [normalized.images];
+        }
+
+        images = images
+            .map(url => (typeof url === "string" ? url.trim() : ""))
+            .filter(Boolean);
+
+        if (images.length === 0 && typeof normalized.image === "string" && normalized.image.trim()) {
+            images = [normalized.image.trim()];
+        }
+
+        normalized.images = images;
+        normalized.image = images[0] || normalized.image;
+    } else {
+        delete normalized.images;
+        delete normalized.image;
     }
 
-    images = images
-        .map(url => (typeof url === "string" ? url.trim() : ""))
-        .filter(Boolean);
-
-    if (images.length === 0 && typeof normalized.image === "string" && normalized.image.trim()) {
-        images = [normalized.image.trim()];
-    }
-
-    normalized.images = images;
-    normalized.image = images[0] || normalized.image;
-
-    if (normalized.price !== undefined && normalized.price !== null && normalized.price !== "") {
+    if (Object.prototype.hasOwnProperty.call(normalized, "price")
+        && normalized.price !== undefined
+        && normalized.price !== null
+        && normalized.price !== "") {
         normalized.price = Number(normalized.price);
     }
 
-    if (normalized.mrp === "" || normalized.mrp === undefined) {
+    if (!Object.prototype.hasOwnProperty.call(normalized, "mrp")) {
+        // keep existing mrp untouched on partial updates
+    } else if (normalized.mrp === "" || normalized.mrp === undefined) {
         normalized.mrp = null;
     } else if (normalized.mrp !== null) {
         normalized.mrp = Number(normalized.mrp);
@@ -44,8 +57,10 @@ const normalizeImagePayload = (body = {}) => {
                 };
             })
             .filter(Boolean);
-    } else {
+    } else if (!forUpdate) {
         normalized.addOns = [];
+    } else {
+        delete normalized.addOns;
     }
 
     return normalized;
@@ -159,7 +174,7 @@ exports.updateMenuById = async (req, res) => {
         if (!restaurantId) {
             return res.status(400).json({ success: false, message: "Restaurant reference is required" });
         }
-        const payload = normalizeImagePayload(req.body);
+        const payload = normalizeImagePayload(req.body, { forUpdate: true });
         // Ensure user belongs to this restaurant
         const updatedItem = await Menu.findOneAndUpdate(
             { _id: req.params.id, restaurant: restaurantId },

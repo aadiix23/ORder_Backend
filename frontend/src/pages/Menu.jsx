@@ -109,7 +109,7 @@ const Menu = () => {
         });
     };
 
-    const handleAddToCart = async (item) => {
+    const handleAddToCart = async (item, requestedQty = 1) => {
         if (!item.isAvailable || addingItemId) return;
 
         setAddingItemId(item._id);
@@ -119,11 +119,12 @@ const Menu = () => {
                 throw new Error("Invalid Table Number in your URL or Scanner.");
             }
 
+            const parsedQty = Number(requestedQty);
             const payload = {
                 tableNumber: tableNumber,
                 restaurantId: restaurantId,
                 menuItemId: item._id,
-                quantity: 1,
+                quantity: Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : 1,
                 addOns: (item.addOns || [])
                     .filter(addOn => addOn?.isAvailable !== false)
                     .filter(addOn => (selectedAddOnsByItem[item._id] || []).includes(addOn.name))
@@ -570,10 +571,7 @@ const Menu = () => {
                                 <button
                                     className={`pd-order-btn ${isAdding ? 'success' : ''}`}
                                     onClick={async () => {
-                                        // Add to cart with quantity
-                                        for (let i = 0; i < detailQty; i++) {
-                                            await handleAddToCart(item);
-                                        }
+                                        await handleAddToCart(item, detailQty);
                                     }}
                                     disabled={isAdding}
                                 >
