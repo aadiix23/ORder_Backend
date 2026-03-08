@@ -288,10 +288,20 @@ const Cart = () => {
                         </div>
                         <hr className="summary-divider" />
                         <h4 className="summary-subtitle">Bill details</h4>
-                        <div className="summary-line">
-                            <span className="label">Food items</span>
-                            <span className="value">₹{itemBaseTotal.toFixed(0)}</span>
-                        </div>
+                        {(cart.items || []).map((item) => {
+                            const base = Number(item?.menuItem?.price) || 0;
+                            const addOnTotal = (item?.addOns || []).reduce((sum, a) => sum + (Number(a?.price) || 0), 0);
+                            const unitPrice = base + addOnTotal;
+                            const lineTotal = unitPrice * item.quantity;
+                            return (
+                                <div className="summary-line summary-item-line" key={`bill-item-${item._id}`}>
+                                    <span className="label">
+                                        {item.quantity} x {item?.menuItem?.name || 'Item'}
+                                    </span>
+                                    <span className="value">₹{lineTotal.toFixed(0)}</span>
+                                </div>
+                            );
+                        })}
                         <div className="summary-line">
                             <span className="label">Add-ons</span>
                             <span className="value">₹{addOnsTotal.toFixed(0)}</span>
