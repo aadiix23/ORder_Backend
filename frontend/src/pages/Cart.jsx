@@ -28,6 +28,8 @@ const Cart = () => {
     const [loading, setLoading] = useState(true);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
+    const [showPaymentPrompt, setShowPaymentPrompt] = useState(false);
+    const [paymentStep, setPaymentStep] = useState('choose');
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
 
@@ -87,7 +89,7 @@ const Cart = () => {
         }
     };
 
-    const handlePlaceOrder = async () => {
+    const handlePlaceOrder = async (paymentMethod = 'counter') => {
         if (!restaurantId || !tableNumber) {
             alert('Missing context. Please scan the QR code again.');
             return;
@@ -99,7 +101,8 @@ const Cart = () => {
                 tableNumber,
                 restaurantId,
                 customerName: customerName || null,
-                customerPhone: customerPhone || null
+                customerPhone: customerPhone || null,
+                paymentMethod
             });
 
             if (customerName) localStorage.setItem('qrderCustomerName', customerName);
@@ -144,6 +147,7 @@ const Cart = () => {
     const grandTotal = subtotal + taxAmount + otherCharges;
 
     const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+    const paymentQrCode = cart?.paymentQrCode || '';
 
     // Loading
     if (loading) return (
@@ -361,7 +365,10 @@ const Cart = () => {
                         </div>
                         <button
                             className="cart-order-btn"
-                            onClick={handlePlaceOrder}
+                            onClick={() => {
+                                setShowPaymentPrompt(true);
+                                setPaymentStep('choose');
+                            }}
                             disabled={placingOrder}
                         >
                             {placingOrder ? (
@@ -373,6 +380,104 @@ const Cart = () => {
                     </div>
                 </>
             )}
+
+            <AnimatePresence>
+                {showPaymentPrompt && (
+                    <motion.div
+                        className="payment-sheet-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => !placingOrder && setShowPaymentPrompt(false)}
+                    >
+                        <motion.div
+                            className="payment-sheet"
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="sheet-handle" />
+
+                            {paymentStep === 'choose' ? (
+                                <>
+                                    <h3>Choose Payment Option</h3>
+                                    <p>Do you want to pay at the counter or pay online by scanning QR code?</p>
+                                    <div className="payment-sheet-actions">
+                                        <button
+                                            className="lp-btn-outline"
+                                            type="button"
+                                            disabled={placingOrder}
+                                            onClick={() => {
+                                                setShowPaymentPrompt(false);
+                                                handlePlaceOrder('counter');
+                                            }}
+                                        >
+                                            Pay At Counter
+                                        </button>
+                                        <button
+                                            className="lp-btn-primary"
+                                            type="button"
+                                            disabled={placingOrder}
+                                            onClick={() => setPaymentStep('online')}
+                                        >
+                                            Pay Online
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <h3>Pay Online</h3>
+                                    <p>Scan this QR code to pay, then confirm to place your order.</p>
+
+                                    <div className="payment-qr-container">
+                                        {paymentQrCode ? (
+                                            <img
+                                                src={paymentQrCode}
+                                                alt="Payment QR Code"
+                                                style={{
+                                                    width: '200px',
+                                                    height: '200px',
+                                                    objectFit: 'contain',
+                                                    borderRadius: '16px',
+                                                    border: '1px solid #f0f0f0'
+                                                }}
+                                            />
+                                        ) : (
+                                            <p style={{ color: '#e63946', fontWeight: 600 }}>
+                                                Payment QR code is not available. Please pay at counter.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="payment-sheet-actions">
+                                        <button
+                                            className="lp-btn-outline"
+                                            type="button"
+                                            disabled={placingOrder}
+                                            onClick={() => setPaymentStep('choose')}
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            className="lp-btn-primary"
+                                            type="button"
+                                            disabled={placingOrder || !paymentQrCode}
+                                            onClick={() => {
+                                                setShowPaymentPrompt(false);
+                                                handlePlaceOrder('online');
+                                            }}
+                                        >
+                                            I've Paid, Place Order
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

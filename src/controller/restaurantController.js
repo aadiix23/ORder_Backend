@@ -97,7 +97,7 @@ exports.updateTableStatus = async (req, res) => {
 exports.updateRestaurantDetails = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, address, contactNumber, logo, taxPercent, otherCharges, otherChargesLabel } = req.body;
+        const { name, address, contactNumber, logo, paymentQrCode, taxPercent, otherCharges, otherChargesLabel } = req.body;
 
         if (String(req.user.restaurant) !== String(id)) {
             return res.status(403).json({ success: false, message: "Unauthorized for this restaurant" });
@@ -130,6 +130,9 @@ exports.updateRestaurantDetails = async (req, res) => {
 
         if (typeof logo === "string") {
             restaurant.logo = logo.trim();
+        }
+        if (typeof paymentQrCode === "string") {
+            restaurant.paymentQrCode = paymentQrCode.trim();
         }
 
         if (taxPercent !== undefined) {

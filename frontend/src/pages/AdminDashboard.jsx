@@ -1446,6 +1446,7 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
         address: '',
         contactNumber: '',
         logo: '',
+        paymentQrCode: '',
         taxPercent: '0',
         otherCharges: '0',
         otherChargesLabel: 'Other Charges'
@@ -1463,6 +1464,7 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
                 address: data.address || '',
                 contactNumber: data.contactNumber || '',
                 logo: data.logo || '',
+                paymentQrCode: data.paymentQrCode || '',
                 taxPercent: String(Number(data?.billingSettings?.taxPercent) || 0),
                 otherCharges: String(Number(data?.billingSettings?.otherCharges) || 0),
                 otherChargesLabel: data?.billingSettings?.otherChargesLabel || 'Other Charges'
@@ -1501,6 +1503,28 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
         }
     };
 
+    const handlePaymentQrUpload = async (file) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setError('Please select an image file for payment QR.');
+            return;
+        }
+        setUploading(true);
+        setUploadProgress(0);
+        setError('');
+        try {
+            const res = await uploadApi.image(file, setUploadProgress);
+            if (res?.data?.url) {
+                setForm(prev => ({ ...prev, paymentQrCode: res.data.url }));
+            }
+        } catch (err) {
+            setError(err?.response?.data?.message || err.message || 'Payment QR upload failed.');
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -1524,6 +1548,7 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
                 address: form.address.trim(),
                 contactNumber: form.contactNumber.trim(),
                 logo: form.logo.trim(),
+                paymentQrCode: form.paymentQrCode.trim(),
                 taxPercent: parsedTaxPercent,
                 otherCharges: parsedOtherCharges,
                 otherChargesLabel: String(form.otherChargesLabel || '').trim() || 'Other Charges'
@@ -1673,6 +1698,56 @@ const SettingsTab = ({ onRestaurantUpdated }) => {
                                 <Upload size={28} color="#94a3b8" />
                                 <p><strong>Click to upload</strong> restaurant logo</p>
                                 <span>JPG, PNG, WebP</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="db-form-field">
+                    <label>Payment QR Code</label>
+                    <div className="db-upload-zone" style={{ minHeight: '160px' }}>
+                        {!uploading && (
+                            <input
+                                type="file"
+                                accept="image/*"
+                                title=""
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    opacity: 0,
+                                    cursor: 'pointer',
+                                    zIndex: 10
+                                }}
+                                onChange={(e) => {
+                                    if (e.target.files?.[0]) handlePaymentQrUpload(e.target.files[0]);
+                                    e.target.value = '';
+                                }}
+                            />
+                        )}
+
+                        {uploading ? (
+                            <div className="db-upload-progress">
+                                <Loader2 size={24} className="animate-spin" color="#7c3aed" />
+                                <p>Uploading payment QR... {uploadProgress}%</p>
+                                <div className="db-progress-bar">
+                                    <div className="db-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                                </div>
+                            </div>
+                        ) : form.paymentQrCode ? (
+                            <div className="db-upload-preview">
+                                <img src={form.paymentQrCode} alt="Payment QR code" />
+                                <div className="db-upload-overlay" style={{ pointerEvents: 'none' }}>
+                                    <ImagePlus size={20} />
+                                    <span>Click to replace payment QR</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="db-upload-placeholder">
+                                <Upload size={28} color="#94a3b8" />
+                                <p><strong>Click to upload</strong> payment QR code</p>
+                                <span>Used for online payment prompt on cart</span>
                             </div>
                         )}
                     </div>

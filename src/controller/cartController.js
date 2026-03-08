@@ -183,12 +183,13 @@ exports.getCartByTable = async (req, res) => {
 
         const cart = await Cart.findOne({ tableNumber: normalizedTableNumber, restaurant: restaurantId })
             .populate("items.menuItem");
-        const restaurant = await Restaurant.findById(restaurantId).select("billingSettings");
+        const restaurant = await Restaurant.findById(restaurantId).select("billingSettings paymentQrCode");
         const billingSettings = {
             taxPercent: Number(restaurant?.billingSettings?.taxPercent) || 0,
             otherCharges: Number(restaurant?.billingSettings?.otherCharges) || 0,
             otherChargesLabel: restaurant?.billingSettings?.otherChargesLabel || "Other Charges"
         };
+        const paymentQrCode = restaurant?.paymentQrCode || "";
 
         if (!cart) {
             return res.status(200).json({
@@ -198,13 +199,15 @@ exports.getCartByTable = async (req, res) => {
                     restaurant: restaurantId,
                     items: [],
                     totalPrice: 0,
-                    billingSettings
+                    billingSettings,
+                    paymentQrCode
                 }
             })
         }
 
         const cartData = cart.toObject();
         cartData.billingSettings = billingSettings;
+        cartData.paymentQrCode = paymentQrCode;
 
         res.status(200).json({
             success: true,

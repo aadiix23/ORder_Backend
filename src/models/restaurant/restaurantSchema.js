@@ -75,6 +75,11 @@ const restaurantSchema = new mongoose.Schema({
     logo: {
         type: String
     },
+    paymentQrCode: {
+        type: String,
+        trim: true,
+        default: ""
+    },
     isActive: {
         type: Boolean,
         default: true
