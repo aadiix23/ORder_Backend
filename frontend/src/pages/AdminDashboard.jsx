@@ -44,6 +44,16 @@ const getStatusClass = (status) => {
 };
 
 const STATUSES = ["Pending", "Preparing", "Ready", "Served", "Completed"];
+const MENU_FAMOUS_COLORS = [
+    { name: 'Coca-Cola Red', value: '#f40009' },
+    { name: 'Facebook Blue', value: '#1877f2' },
+    { name: 'Spotify Green', value: '#1db954' },
+    { name: 'McDonald\'s Yellow', value: '#ffc72c' },
+    { name: 'Netflix Red', value: '#e50914' },
+    { name: 'Starbucks Green', value: '#00704a' },
+    { name: 'Tiffany Blue', value: '#81d8d0' },
+    { name: 'Royal Purple', value: '#7851a9' }
+];
 
 /* ============================
    OVERVIEW TAB
@@ -1299,6 +1309,64 @@ const MenuCustomizationTab = () => {
         );
     }
 
+    const renderColorField = (label, field) => (
+        <div className="db-form-field">
+            <label>{label}</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '8px' }}>
+                    {MENU_FAMOUS_COLORS.map((color) => {
+                        const isActive = String(form[field] || '').toLowerCase() === color.value.toLowerCase();
+                        return (
+                            <button
+                                key={`${field}-${color.value}`}
+                                type="button"
+                                onClick={() => setForm(prev => ({ ...prev, [field]: color.value }))}
+                                title={color.name}
+                                aria-label={`${label} ${color.name}`}
+                                style={{
+                                    width: '100%',
+                                    height: '30px',
+                                    borderRadius: '8px',
+                                    border: isActive ? '2px solid #0f172a' : '1px solid #d1d5db',
+                                    background: color.value,
+                                    cursor: 'pointer'
+                                }}
+                            />
+                        );
+                    })}
+                </div>
+                <div style={{ display: 'grid', gap: '6px', justifyItems: 'center' }}>
+                    <input
+                        type="color"
+                        value={form[field]}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setForm(prev => ({ ...prev, [field]: value }));
+                        }}
+                        title={`Select custom ${label.toLowerCase()}`}
+                        style={{ width: '44px', height: '34px', cursor: 'pointer' }}
+                    />
+                    <small style={{ color: '#64748b', fontWeight: 600 }}>Custom</small>
+                </div>
+            </div>
+            <div
+                style={{
+                    marginTop: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 10px',
+                    borderRadius: '999px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0'
+                }}
+            >
+                <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: form[field], border: '1px solid #cbd5e1' }} />
+                <small style={{ color: '#334155', fontWeight: 700 }}>{String(form[field]).toUpperCase()}</small>
+            </div>
+        </div>
+    );
+
     return (
         <div className="db-panel" style={{ padding: '24px' }}>
             <div className="db-topbar" style={{ marginBottom: '16px' }}>
@@ -1313,18 +1381,9 @@ const MenuCustomizationTab = () => {
 
             <form onSubmit={handleSubmit} className="db-menu-form">
                 <div className="db-form-row">
-                    <div className="db-form-field">
-                        <label>Primary Color</label>
-                        <input type="color" value={form.primaryColor} onChange={(e) => setForm(prev => ({ ...prev, primaryColor: e.target.value }))} />
-                    </div>
-                    <div className="db-form-field">
-                        <label>Accent Color</label>
-                        <input type="color" value={form.accentColor} onChange={(e) => setForm(prev => ({ ...prev, accentColor: e.target.value }))} />
-                    </div>
-                    <div className="db-form-field">
-                        <label>Background Color</label>
-                        <input type="color" value={form.backgroundColor} onChange={(e) => setForm(prev => ({ ...prev, backgroundColor: e.target.value }))} />
-                    </div>
+                    {renderColorField('Primary Color', 'primaryColor')}
+                    {renderColorField('Accent Color', 'accentColor')}
+                    {renderColorField('Background Color', 'backgroundColor')}
                 </div>
 
                 <div className="db-form-field">
@@ -1582,20 +1641,21 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [restaurantName, setRestaurantName] = useState('QRder Admin');
+    const [restaurantLogo, setRestaurantLogo] = useState('');
 
     useEffect(() => {
         fetchOrders();
-        fetchRestaurantName();
+        fetchRestaurantProfile();
     }, []);
 
-    const fetchRestaurantName = async () => {
+    const fetchRestaurantProfile = async () => {
         const id = localStorage.getItem('restaurantId');
         if (!id) return;
         try {
             const res = await restaurantApi.getById(id);
-            if (res?.data?.data?.name) {
-                setRestaurantName(res.data.data.name);
-            }
+            const data = res?.data?.data || {};
+            if (data.name) setRestaurantName(data.name);
+            setRestaurantLogo(data.logo || '');
         } catch (err) {
             console.error('Failed to fetch restaurant details:', err);
         }
@@ -1677,7 +1737,17 @@ const AdminDashboard = () => {
             <aside className="db-sidebar">
                 <div>
                     <div className="db-brand">
-                        <div className="db-brand-icon">{restaurantName.charAt(0).toUpperCase()}</div>
+                        <div className="db-brand-icon" style={{ overflow: 'hidden' }}>
+                            {restaurantLogo ? (
+                                <img
+                                    src={restaurantLogo}
+                                    alt={restaurantName}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                restaurantName.charAt(0).toUpperCase()
+                            )}
+                        </div>
                         <div>
                             <p className="db-brand-name">{restaurantName}</p>
                             <p className="db-brand-sub">Control Center</p>
@@ -1719,7 +1789,7 @@ const AdminDashboard = () => {
                 {activeTab === 'qr' && <QRTab />}
                 {activeTab === 'table-control' && <TableControlTab />}
                 {activeTab === 'menu-customization' && <MenuCustomizationTab />}
-                {activeTab === 'settings' && <SettingsTab onRestaurantUpdated={fetchRestaurantName} />}
+                {activeTab === 'settings' && <SettingsTab onRestaurantUpdated={fetchRestaurantProfile} />}
             </section>
         </div>
     );

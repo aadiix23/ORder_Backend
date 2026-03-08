@@ -262,7 +262,11 @@ const Menu = () => {
                     <p>{menuUi.heroTagline || `Table #${tableNumber} — Order your favourite food!`}</p>
                 </div>
                 <div className="menu-brand-avatar">
-                    {brandName.charAt(0)}
+                    {restaurant?.logo ? (
+                        <img src={restaurant.logo} alt={brandName} />
+                    ) : (
+                        brandName.charAt(0)
+                    )}
                 </div>
             </motion.div>
 
@@ -621,27 +625,6 @@ const Menu = () => {
                     <span>Menu</span>
                 </button>
                 <button
-                    className={`menu-tab-item ${activeTab === 'profile' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('profile');
-                    }}
-                >
-                    <User size={22} />
-                    <span>Table {tableNumber}</span>
-                </button>
-
-
-                <button
-                    className={`menu-tab-item ${activeTab === 'cart' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('cart');
-                        navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`);
-                    }}
-                >
-                    <ShoppingCart size={22} />
-                    <span>Cart</span>
-                </button>
-                <button
                     className={`menu-tab-item ${activeTab === 'history' ? 'active' : ''}`}
                     onClick={() => {
                         setActiveTab('history');
@@ -659,8 +642,8 @@ const Menu = () => {
                     className="menu-fab"
                     onClick={() => navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`)}
                     whileTap={{ scale: 0.9 }}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                    initial={{ scale: 0, x: '-50%' }}
+                    animate={{ scale: 1, x: '-50%' }}
                     transition={{ delay: 0.3, type: 'spring', stiffness: 260, damping: 20 }}
                 >
                     <ShoppingCart size={24} />

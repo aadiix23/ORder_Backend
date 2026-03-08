@@ -482,27 +482,27 @@
 /* ---- Floating Add Button (Center Bottom, like Foodgo) ---- */
 .menu-fab {
     position: fixed;
-    bottom: 80px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 999;
-    width: 60px;
-    height: 60px;
+    z-index: 1001;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
     background: var(--menu-primary);
     color: #fff;
-    border: none;
+    border: 3px solid #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 8px 28px rgba(230, 57, 70, 0.4);
+    box-shadow: 0 8px 24px rgba(230, 57, 70, 0.25);
     transition: var(--menu-transition);
-    font-size: 1.4rem;
+    font-size: 1.3rem;
 }
 
 .menu-fab:hover {
-    transform: translateX(-50%) scale(1.1);
+    transform: translateX(-50%) scale(1.1) translateY(-5px);
     box-shadow: 0 12px 36px rgba(230, 57, 70, 0.5);
 }
 
@@ -536,11 +536,11 @@
     z-index: 998;
     background: #fff;
     border-top: 1px solid #f0f0f0;
-    padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+    padding: 12px 24px max(12px, env(safe-area-inset-bottom));
     display: flex;
     align-items: center;
-    justify-content: space-around;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+    justify-content: space-between;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .menu-tab-item {
@@ -596,7 +596,7 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 6px 24px rgba(230, 57, 70, 0.35);
+    box-shadow: 0 8px 32px rgba(230, 57, 70, 0.25);
     transition: var(--menu-transition);
 }
 
