@@ -17,6 +17,7 @@ import { cartApi, orderApi } from '../api/api';
 import '../styles/cart.css';
 
 const Cart = () => {
+    const _MOTION = motion;
     const { tableNumber } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -302,32 +303,32 @@ const Cart = () => {
                                     <span className="label">
                                         {item.quantity} x {item?.menuItem?.name || 'Item'}
                                     </span>
-                                    <span className="value">₹{lineTotal.toFixed(0)}</span>
+                                    <span className="value">₹{lineTotal.toFixed(2)}</span>
                                 </div>
                             );
                         })}
                         <div className="summary-line">
                             <span className="label">Add-ons</span>
-                            <span className="value">₹{addOnsTotal.toFixed(0)}</span>
+                            <span className="value">₹{addOnsTotal.toFixed(2)}</span>
                         </div>
                         {totalSavings > 0 && (
                             <div className="summary-line summary-line-positive">
                                 <span className="label">Savings</span>
-                                <span className="value">-₹{totalSavings.toFixed(0)}</span>
+                                <span className="value">-₹{totalSavings.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="summary-line summary-line-muted">
                             <span className="label">Tax {taxPercent > 0 ? `(${taxPercent.toFixed(2)}%)` : ''}</span>
-                            <span className="value">₹{taxAmount.toFixed(0)}</span>
+                            <span className="value">₹{taxAmount.toFixed(2)}</span>
                         </div>
                         <div className="summary-line summary-line-muted">
                             <span className="label">{otherChargesLabel}</span>
-                            <span className="value">₹{otherCharges.toFixed(0)}</span>
+                            <span className="value">₹{otherCharges.toFixed(2)}</span>
                         </div>
                         <hr className="summary-divider" />
                         <div className="summary-total-line">
                             <span className="label">Total:</span>
-                            <span className="value">₹{grandTotal.toFixed(0)}</span>
+                            <span className="value">₹{grandTotal.toFixed(2)}</span>
                         </div>
                         <div className="summary-delivery-time">
                             <span>Estimated preparation:</span>
@@ -361,7 +362,7 @@ const Cart = () => {
                     <div className="cart-order-bar">
                         <div className="cart-order-price">
                             <div className="total-label">Total price</div>
-                            <div className="total-value">₹{grandTotal.toFixed(0)}</div>
+                            <div className="total-value">₹{grandTotal.toFixed(2)}</div>
                         </div>
                         <button
                             className="cart-order-btn"

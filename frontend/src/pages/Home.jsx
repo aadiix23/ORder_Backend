@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 
 const Home = () => {
+    const _MOTION = motion;
     const [table, setTable] = useState('');
     const navigate = useNavigate();
 

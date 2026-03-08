@@ -5,6 +5,7 @@ import { UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { authApi } from '../api/api';
 
 const Register = () => {
+    const _MOTION = motion;
     const navigate = useNavigate();
     const [form, setForm] = useState({
         email: '',

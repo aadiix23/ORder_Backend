@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 const LandingPage = () => {
+    const _MOTION = motion;
     const navigate = useNavigate();
 
     const fadeUp = {

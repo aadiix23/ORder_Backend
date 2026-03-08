@@ -61,6 +61,11 @@ const orderSchema = new mongoose.Schema({
         enum: ["Pending", "Preparing", "Ready", "Served", "Completed"],
         default: "Pending"
     },
+    paymentMethod: {
+        type: String,
+        enum: ["counter", "online"],
+        default: "counter"
+    },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Restaurant",

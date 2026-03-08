@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft,
@@ -12,7 +12,7 @@ import { orderApi } from '../api/api';
 import '../styles/cart.css';
 
 const OrderHistory = () => {
-    const { tableNumber } = useParams();
+    const _MOTION = motion;
     const navigate = useNavigate();
     const location = useLocation();
 

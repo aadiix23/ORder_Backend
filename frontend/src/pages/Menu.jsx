@@ -26,6 +26,7 @@ import { menuApi, cartApi, restaurantApi } from '../api/api';
 import '../styles/menu.css';
 
 const Menu = () => {
+    const _MOTION = motion;
     const { tableNumber } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
@@ -327,9 +328,6 @@ const Menu = () => {
                             const itemImages = getItemImages(item);
                             const primaryImage = itemImages.length > 0 ? itemImages[imageFrame % itemImages.length] : null;
                             const rating = getRating(item);
-                            const isAdding = addingItemId === item._id;
-                            const hasAddOns = Array.isArray(item.addOns) && item.addOns.some(a => a?.isAvailable !== false);
-
                             return (
                                 <motion.div
                                     key={item._id}

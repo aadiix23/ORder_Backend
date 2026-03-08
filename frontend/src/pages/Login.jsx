@@ -5,6 +5,7 @@ import { LogIn, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { authApi } from '../api/api';
 
 const Login = () => {
+    const _MOTION = motion;
     const navigate = useNavigate();
     const [form, setForm] = useState({ email: '', password: '' });
     const [showPass, setShowPass] = useState(false);

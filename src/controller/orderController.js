@@ -22,8 +22,9 @@ const ensureTableIsActive = async (restaurantId, tableNumber) => {
 
 exports.placeOrder = async (req, res) => {
     try {
-        const { tableNumber, restaurantId, customerPhone, customerName } = req.body;
+        const { tableNumber, restaurantId, customerPhone, customerName, paymentMethod } = req.body;
         const normalizedTableNumber = String(tableNumber || "").trim();
+        const normalizedPaymentMethod = String(paymentMethod || "counter").trim().toLowerCase();
 
         console.log(`Place Order: Table ${normalizedTableNumber}, Restaurant ${restaurantId}`);
 
@@ -32,6 +33,12 @@ exports.placeOrder = async (req, res) => {
                 success: false,
                 message: "Valid Table Number and Restaurant ID are Required"
             })
+        }
+        if (!["counter", "online"].includes(normalizedPaymentMethod)) {
+            return res.status(400).json({
+                success: false,
+                message: "Payment method must be either counter or online"
+            });
         }
 
         const tableCheck = await ensureTableIsActive(restaurantId, normalizedTableNumber);
@@ -83,6 +90,7 @@ exports.placeOrder = async (req, res) => {
             tableNumber: normalizedTableNumber,
             customerPhone: customerPhone || null,
             customerName: customerName || null,
+            paymentMethod: normalizedPaymentMethod,
             restaurant: restaurantId,
             items: orderItems,
             totalPrice

@@ -817,6 +817,7 @@ const MenuTab = () => {
                     <table className="db-table">
                         <thead>
                             <tr>
+                                <th>S.No.</th>
                                 <th>Image</th>
                                 <th>Name</th>
                                 <th>Category</th>
@@ -828,10 +829,11 @@ const MenuTab = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map(item => {
+                            {filtered.map((item, index) => {
                                 const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
                                 return (
                                 <tr key={item._id}>
+                                    <td>{index + 1}</td>
                                     <td>
                                         <img src={primaryImage} alt={item.name} className="db-menu-img" />
                                     </td>
@@ -906,7 +908,9 @@ const QRTab = () => {
         try {
             const res = await restaurantApi.getTableStatuses(restaurantId);
             setTableStatuses(res?.data?.data || []);
-        } catch (_err) { }
+        } catch (err) {
+            console.error('Failed to load table statuses for QR tab:', err);
+        }
     };
 
     useEffect(() => {
