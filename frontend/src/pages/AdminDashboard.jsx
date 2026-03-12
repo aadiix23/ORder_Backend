@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { orderApi, menuApi, uploadApi, restaurantApi } from '../api/api';
 import { io } from 'socket.io-client';
+import { Howl } from 'howler';
 
 const CATEGORIES = ['Starter', 'Main Course', 'Dessert', 'Drink', 'Sides'];
 const SIZES = ['Regular', 'Small', 'Medium', 'Large'];
@@ -121,6 +122,14 @@ const OverviewTab = ({ orders, loading, error, stats, fetchOrders, updateOrderSt
                         </div>
                         <p className="db-order-meta">Order ID: {order._id}</p>
                         <p className="db-order-meta">Placed: {new Date(order.createdAt).toLocaleString()}</p>
+                        <p className="db-order-meta">
+                            Payment: <strong>{order.paymentMethod === 'online' ? 'Online' : 'At Counter'}</strong>
+                        </p>
+                        {(order.customerName || order.customerPhone) && (
+                            <p className="db-order-meta">
+                                Customer: {order.customerName || 'N/A'} {order.customerPhone ? `(${order.customerPhone})` : ''}
+                            </p>
+                        )}
                         <div className="db-order-items">
                             {order.items?.map((item, idx) => (
                                 <div key={`${order._id}-${idx}`} className="db-order-item-row">
@@ -206,7 +215,7 @@ const MenuTab = () => {
 
     const filtered = useMemo(() => {
         const q = searchTerm.trim().toLowerCase();
-        return items.filter(i => {
+        const rawFiltered = items.filter(i => {
             const matchesCategory = categoryFilter === 'All' || i.category === categoryFilter;
             if (!q) return matchesCategory;
             const matchesSearch =
@@ -216,6 +225,17 @@ const MenuTab = () => {
                 i.description?.toLowerCase().includes(q);
             return matchesCategory && matchesSearch;
         });
+
+        const groups = {};
+        for(const item of rawFiltered) {
+           const key = item.name.trim().toLowerCase();
+           if(!groups[key]) {
+               groups[key] = { ...item, variants: [item] };
+           } else {
+               groups[key].variants.push(item);
+           }
+        }
+        return Object.values(groups);
     }, [items, searchTerm, categoryFilter]);
 
     const categoryOptions = useMemo(() => {
@@ -817,68 +837,86 @@ const MenuTab = () => {
                     <table className="db-table">
                         <thead>
                             <tr>
-                                <th>S.No.</th>
-                                <th>Image</th>
-                                <th>Name</th>
-                                <th>Category</th>
-                                <th>Size</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Tags</th>
-                                <th style={{ textAlign: 'right' }}>Actions</th>
+                                <th>S.NO.</th>
+                                <th>IMAGE</th>
+                                <th>NAME</th>
+                                <th>CATEGORY</th>
+                                <th>SIZE</th>
+                                <th>PRICE</th>
+                                <th>STATUS</th>
+                                <th>TAGS</th>
+                                <th style={{ textAlign: 'right' }}>ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filtered.map((item, index) => {
                                 const primaryImage = (Array.isArray(item.images) && item.images[0]) || item.image;
+                                const variants = item.variants || [item];
                                 return (
-                                <tr key={item._id}>
-                                    <td>{index + 1}</td>
-                                    <td>
-                                        <img src={primaryImage} alt={item.name} className="db-menu-img" />
-                                    </td>
-                                    <td>
-                                        <strong className="db-menu-name">{item.name}</strong>
-                                        <p className="db-menu-desc">{item.description?.slice(0, 60)}{item.description?.length > 60 ? '...' : ''}</p>
-                                        {!!(item.addOns?.length) && (
-                                            <p className="db-menu-desc" style={{ marginTop: '4px' }}>
-                                                Add-ons: {item.addOns.length}
-                                            </p>
-                                        )}
-                                    </td>
-                                    <td><span className="db-cat-pill">{item.category}</span></td>
-                                    <td><span className="db-cat-pill">{item.size || 'Regular'}</span></td>
-                                    <td className="db-price">
-                                        ₹{Number(item.price).toFixed(2)}
-                                        {(item.mrp !== null && item.mrp !== undefined && Number(item.mrp) > Number(item.price)) && (
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                <s>₹{Number(item.mrp).toFixed(2)}</s> ({Math.round(((Number(item.mrp) - Number(item.price)) / Number(item.mrp)) * 100)}% OFF)
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <span className={`db-avail-dot ${item.isAvailable !== false ? 'avail-yes' : 'avail-no'}`}>
-                                            {item.isAvailable !== false ? 'Available' : 'Unavailable'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="db-tags">
-                                            {item.attributes?.isVeg && <span className="db-tag tag-veg">Veg</span>}
-                                            {item.attributes?.isNonVeg && <span className="db-tag tag-spicy">Non-Veg</span>}
-                                            {item.attributes?.isSpicy && <span className="db-tag tag-spicy">Spicy</span>}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="db-actions">
-                                            <button className="db-icon-btn edit" onClick={() => openEdit(item)} title="Edit">
-                                                <Pencil size={15} />
-                                            </button>
-                                            <button className="db-icon-btn delete" onClick={() => handleDelete(item._id, item.name)} title="Delete">
-                                                <Trash2 size={15} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                    <React.Fragment key={item._id}>
+                                        {variants.map((v, vIndex) => (
+                                            <tr key={v._id} style={{ 
+                                                borderBottom: vIndex === variants.length - 1 ? '2px solid #cbd5e1' : '1px solid #f8fafc',
+                                                background: index % 2 === 0 ? '#ffffff' : '#f8fafc'
+                                            }}>
+                                                {vIndex === 0 && (
+                                                    <td rowSpan={variants.length} style={{ verticalAlign: 'top', paddingTop: '16px' }}>{index + 1}</td>
+                                                )}
+                                                {vIndex === 0 && (
+                                                    <td rowSpan={variants.length} style={{ verticalAlign: 'top', paddingTop: '16px', borderRight: '1px solid #f1f5f9' }}>
+                                                        <img src={primaryImage} alt={item.name} className="db-menu-img" style={{ marginTop: 0 }} />
+                                                    </td>
+                                                )}
+                                                {vIndex === 0 && (
+                                                    <td rowSpan={variants.length} style={{ verticalAlign: 'top', paddingTop: '16px', borderRight: '1px solid #f1f5f9' }}>
+                                                        <strong className="db-menu-name">{item.name}</strong>
+                                                        <p className="db-menu-desc">{item.description?.slice(0, 60)}{item.description?.length > 60 ? '...' : ''}</p>
+                                                        {!!(item.addOns?.length) && (
+                                                            <p className="db-menu-desc" style={{ marginTop: '4px' }}>
+                                                                Add-ons: {item.addOns.length}
+                                                            </p>
+                                                        )}
+                                                    </td>
+                                                )}
+                                                {vIndex === 0 && (
+                                                    <td rowSpan={variants.length} style={{ verticalAlign: 'top', paddingTop: '16px', borderRight: '1px solid #f1f5f9' }}><span className="db-cat-pill">{item.category}</span></td>
+                                                )}
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <span className="db-cat-pill">{v.size || 'Regular'}</span>
+                                                </td>
+                                                <td className="db-price" style={{ verticalAlign: 'middle' }}>
+                                                    ₹{Number(v.price).toFixed(2)}
+                                                    {(v.mrp !== null && v.mrp !== undefined && Number(v.mrp) > Number(v.price)) && (
+                                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                            <s>₹{Number(v.mrp).toFixed(2)}</s> ({Math.round(((Number(v.mrp) - Number(v.price)) / Number(v.mrp)) * 100)}% OFF)
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <span className={`db-avail-dot ${v.isAvailable !== false ? 'avail-yes' : 'avail-no'}`}>
+                                                        {v.isAvailable !== false ? 'Available' : 'Not Available'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <div className="db-tags">
+                                                        {v.attributes?.isVeg && <span className="db-tag tag-veg">Veg</span>}
+                                                        {v.attributes?.isNonVeg && <span className="db-tag tag-spicy">Non-Veg</span>}
+                                                        {v.attributes?.isSpicy && <span className="db-tag tag-spicy">Spicy</span>}
+                                                    </div>
+                                                </td>
+                                                <td style={{ verticalAlign: 'middle' }}>
+                                                    <div className="db-actions" style={{ justifyContent: 'flex-end' }}>
+                                                        <button className="db-icon-btn edit" onClick={() => openEdit(v)} title={`Edit ${v.size} variant`}>
+                                                            <Pencil size={15} />
+                                                        </button>
+                                                        <button className="db-icon-btn delete" onClick={() => handleDelete(v._id, `${v.name} (${v.size})`)} title={`Delete ${v.size} variant`}>
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
                                 );
                             })}
                         </tbody>
@@ -1779,6 +1817,9 @@ const AdminDashboard = () => {
     const [error, setError] = useState('');
     const [restaurantName, setRestaurantName] = useState('QRder Admin');
     const [restaurantLogo, setRestaurantLogo] = useState('');
+    
+    // Store reference to the repeating alarm
+    const alarmHowl = useRef(null);
 
     useEffect(() => {
         fetchOrders();
@@ -1803,6 +1844,18 @@ const AdminDashboard = () => {
         const pendingOrders = orders.filter((o) => (o.status || 'Pending') !== 'Completed').length;
         const revenue = orders.reduce((sum, order) => sum + Number(order.totalPrice || 0), 0);
         return { totalOrders, pendingOrders, revenue };
+    }, [orders]);
+
+    // Check if we should stop the alarm based on orders state
+    useEffect(() => {
+        if (!alarmHowl.current) return;
+        
+        // Check if there are still any 'Pending' orders. If not, stop the alarm.
+        const hasPendingOrders = orders.some(o => (o.status || 'Pending').toLowerCase() === 'pending');
+        if (!hasPendingOrders) {
+            alarmHowl.current.stop();
+            alarmHowl.current = null;
+        }
     }, [orders]);
 
     const fetchOrders = async () => {
@@ -1830,6 +1883,18 @@ const AdminDashboard = () => {
 
         socket.on('new_order', () => {
             fetchOrders();
+            if (!alarmHowl.current) {
+                alarmHowl.current = new Howl({
+                    src: ['/bell_ring.mp3'],
+                    loop: true,
+                    volume: 1.0,
+                });
+                alarmHowl.current.play();
+            } else {
+                if (!alarmHowl.current.playing()) {
+                    alarmHowl.current.play();
+                }
+            }
         });
 
         socket.on('order_status_updated', () => {
@@ -1838,6 +1903,10 @@ const AdminDashboard = () => {
 
         return () => {
             socket.disconnect();
+            if (alarmHowl.current) {
+                alarmHowl.current.stop();
+                alarmHowl.current = null;
+            }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -1849,11 +1918,15 @@ const AdminDashboard = () => {
     };
 
     const updateOrderStatus = async (id, status) => {
+        // Optimistic update to immediately stop alarm UI without waiting for API
+        setOrders(prev => prev.map(o => o._id === id ? { ...o, status } : o));
+        
         try {
             await orderApi.updateStatus(id, status);
             fetchOrders(); // Refresh after update
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to update order status');
+            fetchOrders(); // Revert on failure
         }
     }
 

@@ -22,7 +22,12 @@ exports.auth = (req, res, next) => {
 exports.onlyAdmin = (req,res,next)=>{
   
   console.log(req.user);
-  if(req.user.role!=="admin")return res.status(403).json({message:"Admin Only"});
+  if(req.user.role!=="admin" && req.user.role!=="superadmin")return res.status(403).json({message:"Admin Only"});
+  next();
+}
+
+exports.onlySuperAdmin = (req, res, next) => {
+  if (req.user.role !== "superadmin") return res.status(403).json({ message: "Super Admin Only" });
   next();
 }
 

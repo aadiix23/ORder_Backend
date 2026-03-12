@@ -16,13 +16,17 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["admin", "chef"],
+      enum: ["admin", "chef", "superadmin"],
       required: true
     },
     restaurant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Restaurant",
       index: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

@@ -55,6 +55,8 @@ exports.login = async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ message: "Invalid credentials" });
 
+    if (user.disabled) return res.status(403).json({ message: "Account disabled. Contact your platform administrator." });
+
     const token = jwt.sign(
       { id: user._id, role: user.role, restaurant: user.restaurant },
       process.env.JWT_SECRET,

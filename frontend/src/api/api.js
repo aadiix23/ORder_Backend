@@ -35,6 +35,25 @@ export const authApi = {
     register: (data) => api.post('/user/register', data),
 };
 
+const getSuperAdminHeader = () => {
+    const token = localStorage.getItem('sa_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export const superadminApi = {
+    login: (data) => api.post('/user/login', data),
+    getStats: () => api.get('/superadmin/stats', { headers: getSuperAdminHeader() }),
+    getRestaurants: () => api.get('/superadmin/restaurants', { headers: getSuperAdminHeader() }),
+    getRestaurantDetail: (id) => api.get(`/superadmin/restaurant/${id}/detail`, { headers: getSuperAdminHeader() }),
+    getUsers: () => api.get('/superadmin/users', { headers: getSuperAdminHeader() }),
+    getOrders: (params = {}) => {
+        const qs = new URLSearchParams(params).toString();
+        return api.get(`/superadmin/orders${qs ? `?${qs}` : ''}`, { headers: getSuperAdminHeader() });
+    },
+    deleteRestaurant: (id) => api.delete(`/superadmin/restaurant/${id}`, { headers: getSuperAdminHeader() }),
+    toggleUser: (id, disabled) => api.patch(`/superadmin/user/${id}/toggle`, { disabled }, { headers: getSuperAdminHeader() }),
+};
+
 export const cartApi = {
     get: (tableNumber, restaurantId) => api.get(`/cart/${tableNumber}?restaurantId=${restaurantId}`),
     add: (data) => api.post('/cart/add', data),

@@ -46,6 +46,7 @@ const Menu = () => {
     const [selectedAddOnsByItem, setSelectedAddOnsByItem] = useState({});
     const [activeTab, setActiveTab] = useState('home');
     const [selectedItem, setSelectedItem] = useState(null);
+    const [selectedVariantId, setSelectedVariantId] = useState(null);
     const [detailQty, setDetailQty] = useState(1);
     const [imageFrame, setImageFrame] = useState(0);
     const [detailImageIndex, setDetailImageIndex] = useState(0);
@@ -149,13 +150,24 @@ const Menu = () => {
 
     // Filter Logic
     const displayedItems = useMemo(() => {
-        return menuItems.filter(item => {
+        const filtered = menuItems.filter(item => {
             const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
             const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (item.size || '').toLowerCase().includes(searchQuery.toLowerCase());
             return matchesCategory && matchesSearch;
         });
+
+        const groups = {};
+        for(const item of filtered) {
+           const key = item.name.trim().toLowerCase();
+           if(!groups[key]) {
+               groups[key] = { ...item, variants: [item] };
+           } else {
+               groups[key].variants.push(item);
+           }
+        }
+        return Object.values(groups);
     }, [menuItems, activeCategory, searchQuery]);
 
     const categories = useMemo(() => {
@@ -335,7 +347,12 @@ const Menu = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.04, duration: 0.35 }}
                                     className={`menu-card ${!item.isAvailable ? 'unavailable' : ''}`}
-                                    onClick={() => item.isAvailable && setSelectedItem(item)}
+                                    onClick={() => {
+                                        if(item.isAvailable) {
+                                            setSelectedItem(item);
+                                            setSelectedVariantId(item.variants?.[0]?._id || item._id);
+                                        }
+                                    }}
                                     style={{ cursor: item.isAvailable ? 'pointer' : 'default' }}
                                 >
                                     {/* Image */}
@@ -362,7 +379,12 @@ const Menu = () => {
                                         <p className="menu-card-subtitle">{item.description}</p>
 
                                         {/* Price */}
-                                        <div className="menu-card-price-tag">₹{Number(item.price).toFixed(0)}</div>
+                                        <div className="menu-card-price-tag">
+                                            {item.variants && item.variants.length > 1 
+                                                ? `₹${Math.min(...item.variants.map(v => Number(v.price)))} - ₹${Math.max(...item.variants.map(v => Number(v.price)))}`
+                                                : `₹${Number(item.price).toFixed(0)}`
+                                            }
+                                        </div>
 
                                         {/* Rating & Heart */}
                                         {(showRatings || showFavorites) && (
@@ -395,7 +417,8 @@ const Menu = () => {
             {/* ===== Full-Screen Product Detail Page ===== */}
             <AnimatePresence>
                 {selectedItem && (() => {
-                    const item = selectedItem;
+                    const group = selectedItem;
+                    const item = group.variants?.find(v => v._id === selectedVariantId) || group;
                     const itemImages = getItemImages(item);
                     const safeIndex = Math.min(detailImageIndex, Math.max(itemImages.length - 1, 0));
                     const primaryImage = itemImages.length > 0 ? itemImages[safeIndex] : null;
@@ -506,7 +529,7 @@ const Menu = () => {
                                     {item.attributes?.isVeg && <span className="pd-badge veg">VEG</span>}
                                     {item.attributes?.isNonVeg && <span className="pd-badge nonveg">NON-VEG</span>}
                                     {item.attributes?.isSpicy && <span className="pd-badge spicy">🌶 SPICY</span>}
-                                    {item.size && <span className="pd-badge size">{item.size}</span>}
+                                    {(!group.variants || group.variants.length === 1) && item.size && <span className="pd-badge size">{item.size}</span>}
                                     {(item.mrp != null && Number(item.mrp) > Number(item.price)) && (
                                         <span className="pd-badge" style={{ background: 'rgba(22,163,106,0.08)', color: '#16a34a' }}>
                                             {Math.round(((Number(item.mrp) - Number(item.price)) / Number(item.mrp)) * 100)}% OFF
@@ -515,7 +538,7 @@ const Menu = () => {
                                 </div>
 
                                 {/* Portion / Quantity Control */}
-                                <div className="pd-controls-row">
+                                <div className="pd-controls-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
                                     <div className="pd-control-group">
                                         <span className="pd-control-label">Portion</span>
                                         <div className="pd-qty-row">
@@ -534,6 +557,32 @@ const Menu = () => {
                                             </button>
                                         </div>
                                     </div>
+
+                                    {group.variants && group.variants.length > 1 && (
+                                        <div className="pd-control-group" style={{ flex: '1 1 auto', minWidth: 'min-content' }}>
+                                            <span className="pd-control-label">Size</span>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingBottom: '4px' }}>
+                                                {group.variants.map(v => (
+                                                    <button
+                                                        key={v._id}
+                                                        onClick={() => setSelectedVariantId(v._id)}
+                                                        style={{
+                                                            padding: '8px 12px',
+                                                            borderRadius: '8px',
+                                                            border: selectedVariantId === v._id ? '2px solid var(--menu-primary)' : '1px solid #e2e8f0',
+                                                            background: selectedVariantId === v._id ? 'rgba(230, 57, 70, 0.05)' : '#fff',
+                                                            color: selectedVariantId === v._id ? 'var(--menu-primary)' : '#64748b',
+                                                            fontWeight: selectedVariantId === v._id ? 'bold' : 'normal',
+                                                            cursor: 'pointer',
+                                                            whiteSpace: 'nowrap'
+                                                        }}
+                                                    >
+                                                        {v.size || 'Regular'} (₹{v.price})
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Add-ons — Horizontal Scrollable Cards (like Toppings) */}
