@@ -40,9 +40,11 @@ const OrderHistory = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await orderApi.getHistory(phoneToSearch, restaurantId);
+            const normalizedPhone = String(phoneToSearch).trim();
+            const lookupToken = localStorage.getItem(`qrderLookupToken:${restaurantId}:${normalizedPhone}`) || '';
+            const res = await orderApi.getHistory(normalizedPhone, restaurantId, lookupToken);
             setOrders(res.data.data || []);
-            localStorage.setItem('qrderCustomerPhone', phoneToSearch);
+            localStorage.setItem('qrderCustomerPhone', normalizedPhone);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch history');
         } finally {

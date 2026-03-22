@@ -227,7 +227,7 @@ const Menu = () => {
                             fontWeight: 700,
                             fontSize: '0.95rem',
                             cursor: 'pointer',
-                            fontFamily: 'Outfit, sans-serif'
+                            fontFamily: 'Poppins, sans-serif'
                         }}
                     >
                         Return Home

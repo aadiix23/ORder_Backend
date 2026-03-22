@@ -73,3 +73,57 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.registerDeviceToken = async (req, res) => {
+  try {
+    const token = String(req.body?.token || "").trim();
+
+    if (!token) {
+      return res.status(400).json({ message: "Device token is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $addToSet: { fcmTokens: token } },
+      { new: true }
+    ).select("_id");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Device token registered successfully"
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+exports.removeDeviceToken = async (req, res) => {
+  try {
+    const token = String(req.body?.token || "").trim();
+
+    if (!token) {
+      return res.status(400).json({ message: "Device token is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $pull: { fcmTokens: token } },
+      { new: true }
+    ).select("_id");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Device token removed successfully"
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

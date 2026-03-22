@@ -437,7 +437,7 @@ const UsersTab = () => {
                                             style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: 6,
                                                 padding: '6px 14px', borderRadius: 99, cursor: 'pointer',
-                                                fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '0.78rem',
+                                                fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '0.78rem',
                                                 border: 'none', transition: 'all 0.2s ease',
                                                 background: u.disabled
                                                     ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.1)',
@@ -732,7 +732,7 @@ const OrdersTab = () => {
                         onClick={() => setStatusFilter(s)}
                         style={{
                             padding: '6px 16px', borderRadius: 99, border: 'none', cursor: 'pointer',
-                            fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '0.8rem',
+                            fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '0.8rem',
                             background: statusFilter === s
                                 ? (s === 'All' ? '#6366f1' : STATUS_COLORS[s] || '#6366f1')
                                 : 'rgba(255,255,255,0.05)',
@@ -829,7 +829,7 @@ const OrdersTab = () => {
                                 <button key={p} onClick={() => handlePage(p)}
                                     style={{
                                         padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                                        fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '0.82rem',
+                                        fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '0.82rem',
                                         background: page === p ? '#6366f1' : 'rgba(255,255,255,0.05)',
                                         color: page === p ? '#fff' : '#64748b'
                                     }}

@@ -13,7 +13,7 @@ const { auth, onlyStaff } = require("../middlewares/auth");
 router.post("/place", placeOrder);
 router.get("/history/:phone", getOrderHistoryByPhone);
 router.get("/", auth, onlyStaff, getAllOrder);
-router.get("/table/:tableNumber", getOrderByTable);
+router.get("/table/:tableNumber", auth, onlyStaff, getOrderByTable);
 router.put("/:id/status", auth, onlyStaff, updateOrderStatus);
 
 module.exports = router;

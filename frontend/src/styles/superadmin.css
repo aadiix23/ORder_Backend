@@ -2,7 +2,7 @@
    SUPERADMIN MODULE — Dark Slate / Indigo Theme
    ============================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   --sa-bg: #0f1117;
@@ -25,7 +25,7 @@
   display: flex;
   min-height: 100vh;
   background: var(--sa-bg);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   color: var(--sa-text);
 }
 
@@ -104,7 +104,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   width: 100%;
 }
 
@@ -146,7 +146,7 @@
   font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   width: 100%;
 }
 
@@ -247,7 +247,7 @@
 
 .sa-stat-icon.indigo { background: rgba(99,102,241,0.15); color: #818cf8; }
 .sa-stat-icon.green { background: rgba(34,197,94,0.12); color: #4ade80; }
-.sa-stat-icon.amber { background: rgba(245,158,11,0.12); color: #fbbf24; }
+.sa-stat-icon.amber { background: rgba(245,158,11,0.12); color: #f59e0b; }
 .sa-stat-icon.rose { background: rgba(244,63,94,0.12); color: #fb7185; }
 
 .sa-stat-label {
@@ -351,7 +351,7 @@
 .sa-badge.indigo { background: rgba(99,102,241,0.12); color: #818cf8; }
 .sa-badge.green { background: rgba(34,197,94,0.12); color: #4ade80; }
 .sa-badge.red { background: rgba(239,68,68,0.12); color: #f87171; }
-.sa-badge.amber { background: rgba(245,158,11,0.1); color: #fbbf24; }
+.sa-badge.amber { background: rgba(245,158,11,0.1); color: #f59e0b; }
 .sa-badge.slate { background: rgba(100,116,139,0.12); color: #94a3b8; }
 
 /* ---- BUTTONS ---- */
@@ -361,7 +361,7 @@
   gap: 8px;
   padding: 10px 20px;
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
@@ -445,7 +445,7 @@
   align-items: center;
   justify-content: center;
   background: var(--sa-bg);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   padding: 24px;
   position: relative;
   overflow: hidden;
@@ -531,7 +531,7 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   padding: 13px 16px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 0.95rem;
   color: #fff;
   outline: none;
@@ -557,7 +557,7 @@
   border-radius: 12px;
   background: linear-gradient(135deg, #6366f1, #818cf8);
   color: #fff;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 700;
   font-size: 1rem;
   border: none;
@@ -602,7 +602,7 @@
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 10px;
   padding: 10px 14px 10px 38px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 0.88rem;
   color: #fff;
   outline: none;

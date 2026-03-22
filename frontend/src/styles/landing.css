@@ -5,8 +5,8 @@
 /* ---------- BASE LANDING OVERRIDES ---------- */
 .landing {
   background: #ffffff;
-  color: #1a1a2e;
-  font-family: 'Outfit', sans-serif;
+  color: #020617;
+  font-family: 'Poppins', sans-serif;
   overflow-x: hidden;
 }
 
@@ -44,7 +44,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  background: linear-gradient(135deg, #f97316, #fbbf24);
   color: #fff;
   display: flex;
   align-items: center;
@@ -56,7 +56,7 @@
 .lp-logo span {
   font-weight: 700;
   font-size: 1.4rem;
-  color: #1a1a2e;
+  color: #020617;
   letter-spacing: -0.5px;
 }
 
@@ -75,7 +75,7 @@
 }
 
 .lp-nav-links a:hover {
-  color: #7c3aed;
+  color: #f97316;
 }
 
 .lp-nav-links a::after {
@@ -85,7 +85,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #7c3aed;
+  background: #f97316;
   border-radius: 1px;
   transition: width 0.3s ease;
 }
@@ -102,7 +102,7 @@
 
 /* ---------- BUTTONS ---------- */
 .lp-btn-primary {
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  background: linear-gradient(135deg, #f97316, #9a3412);
   color: #fff;
   border: none;
   padding: 10px 24px;
@@ -114,13 +114,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .lp-btn-primary:hover {
-  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  background: linear-gradient(135deg, #ea580c, #f97316);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.3);
 }
 
 .lp-btn-ghost {
@@ -133,12 +133,12 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.25s ease;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .lp-btn-ghost:hover {
-  color: #7c3aed;
-  background: rgba(124, 58, 237, 0.06);
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.06);
 }
 
 .lp-btn-outline {
@@ -154,18 +154,18 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .lp-btn-outline:hover {
-  border-color: #7c3aed;
-  color: #7c3aed;
-  background: rgba(124, 58, 237, 0.04);
+  border-color: #f97316;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.04);
 }
 
 .lp-btn-white {
   background: #fff;
-  color: #7c3aed;
+  color: #f97316;
   border: none;
   padding: 10px 24px;
   border-radius: 10px;
@@ -176,7 +176,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .lp-btn-white:hover {
@@ -216,8 +216,8 @@
   width: 100%;
   height: 340px;
   background: linear-gradient(180deg,
-      rgba(124, 58, 237, 0.08) 0%,
-      rgba(168, 85, 247, 0.04) 50%,
+      rgba(249, 115, 22, 0.08) 0%,
+      rgba(251, 191, 36, 0.04) 50%,
       transparent 100%);
   pointer-events: none;
 }
@@ -229,7 +229,7 @@
   left: -200px;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -240,7 +240,7 @@
   right: -200px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -255,13 +255,13 @@
   font-size: clamp(2.2rem, 4.5vw, 3.5rem);
   font-weight: 700;
   line-height: 1.15;
-  color: #1a1a2e;
+  color: #020617;
   margin-bottom: 24px;
   letter-spacing: -1.2px;
 }
 
 .lp-highlight {
-  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -307,7 +307,7 @@
   display: block;
   font-size: 2.2rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  background: linear-gradient(135deg, #f97316, #fbbf24);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -332,9 +332,9 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 3px;
-  color: #7c3aed;
+  color: #f97316;
   margin-bottom: 14px;
-  background: rgba(124, 58, 237, 0.08);
+  background: rgba(249, 115, 22, 0.08);
   padding: 6px 16px;
   border-radius: 50px;
 }
@@ -342,7 +342,7 @@
 .lp-section-header h2 {
   font-size: clamp(1.6rem, 3vw, 2.4rem);
   font-weight: 700;
-  color: #1a1a2e;
+  color: #020617;
   margin-bottom: 14px;
   letter-spacing: -0.8px;
 }
@@ -376,16 +376,16 @@
 }
 
 .lp-feature-card:hover {
-  border-color: rgba(124, 58, 237, 0.2);
-  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.08);
+  border-color: rgba(249, 115, 22, 0.2);
+  box-shadow: 0 12px 40px rgba(249, 115, 22, 0.08);
 }
 
 .lp-feature-icon {
   width: 52px;
   height: 52px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(168, 85, 247, 0.1));
-  color: #7c3aed;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(251, 191, 36, 0.1));
+  color: #f97316;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,7 +395,7 @@
 .lp-feature-card h3 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #020617;
   margin-bottom: 10px;
 }
 
@@ -428,15 +428,15 @@
 }
 
 .lp-step-card:hover {
-  border-color: rgba(124, 58, 237, 0.2);
-  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.06);
+  border-color: rgba(249, 115, 22, 0.2);
+  box-shadow: 0 8px 30px rgba(249, 115, 22, 0.06);
   transform: translateY(-4px);
 }
 
 .lp-step-num {
   font-size: 2.8rem;
   font-weight: 800;
-  background: linear-gradient(180deg, rgba(124, 58, 237, 0.15) 0%, rgba(124, 58, 237, 0.02) 100%);
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.02) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -445,14 +445,14 @@
 }
 
 .lp-step-icon {
-  color: #7c3aed;
+  color: #f97316;
   margin-bottom: 16px;
 }
 
 .lp-step-card h3 {
   font-size: 1.02rem;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #020617;
   margin-bottom: 10px;
 }
 
@@ -490,14 +490,14 @@
 }
 
 .lp-price-popular {
-  border: 2px solid #7c3aed;
-  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.12);
+  border: 2px solid #f97316;
+  box-shadow: 0 12px 40px rgba(249, 115, 22, 0.12);
   transform: scale(1.04);
 }
 
 .lp-price-popular:hover {
   transform: scale(1.04) translateY(-4px);
-  box-shadow: 0 16px 48px rgba(124, 58, 237, 0.18);
+  box-shadow: 0 16px 48px rgba(249, 115, 22, 0.18);
 }
 
 .lp-popular-badge {
@@ -505,7 +505,7 @@
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  background: linear-gradient(135deg, #f97316, #fbbf24);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -518,7 +518,7 @@
 .lp-price-card h3 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #020617;
   margin-bottom: 16px;
 }
 
@@ -529,7 +529,7 @@
 .lp-price-amount {
   font-size: 2.4rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: #020617;
 }
 
 .lp-price-period {
@@ -566,7 +566,7 @@
 }
 
 .lp-price-features li svg {
-  color: #7c3aed;
+  color: #f97316;
   flex-shrink: 0;
 }
 
@@ -576,7 +576,7 @@
 }
 
 .lp-cta-card {
-  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #a855f7 100%);
+  background: linear-gradient(135deg, #f97316 0%, #9a3412 50%, #fbbf24 100%);
   border-radius: 24px;
   padding: 64px 48px;
   text-align: center;
@@ -661,7 +661,7 @@
 .lp-footer-col h4 {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #020617;
   margin-bottom: 6px;
 }
 
@@ -673,7 +673,7 @@
 }
 
 .lp-footer-col a:hover {
-  color: #7c3aed;
+  color: #f97316;
 }
 
 .lp-footer-bottom {

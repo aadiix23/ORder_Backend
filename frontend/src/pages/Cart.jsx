@@ -98,7 +98,7 @@ const Cart = () => {
 
         setPlacingOrder(true);
         try {
-            await orderApi.place({
+            const response = await orderApi.place({
                 tableNumber,
                 restaurantId,
                 customerName: customerName || null,
@@ -108,6 +108,9 @@ const Cart = () => {
 
             if (customerName) localStorage.setItem('qrderCustomerName', customerName);
             if (customerPhone) localStorage.setItem('qrderCustomerPhone', customerPhone);
+            if (customerPhone && response?.data?.lookupToken) {
+                localStorage.setItem(`qrderLookupToken:${restaurantId}:${customerPhone}`, response.data.lookupToken);
+            }
 
             setOrderSuccess(true);
             setTimeout(() => {

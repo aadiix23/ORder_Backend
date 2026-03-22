@@ -1,5 +1,5 @@
 /* ===========================
-   DASHBOARD — LIGHT PURPLE THEME
+   DASHBOARD — LIGHT ORANGE THEME
    Matches Landing Page Design
    =========================== */
 
@@ -57,7 +57,7 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  background: linear-gradient(135deg, #f97316, #fbbf24);
   color: #fff;
   display: flex;
   align-items: center;
@@ -68,7 +68,7 @@
 }
 
 .db-brand-name {
-  color: #1a1a2e;
+  color: #020617;
   font-weight: 700;
   font-size: 1rem;
 }
@@ -99,17 +99,17 @@
   cursor: pointer;
   transition: all 0.25s ease;
   text-align: left;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .db-nav-btn:hover {
-  background: rgba(124, 58, 237, 0.06);
-  color: #7c3aed;
+  background: rgba(249, 115, 22, 0.06);
+  color: #f97316;
 }
 
 .db-nav-btn.is-active {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(168, 85, 247, 0.08));
-  color: #7c3aed;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(251, 191, 36, 0.08));
+  color: #f97316;
   font-weight: 600;
 }
 
@@ -126,7 +126,7 @@
   font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.25s ease;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   margin-top: 20px;
 }
 
@@ -157,7 +157,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  color: #1a1a2e;
+  color: #020617;
   white-space: nowrap;
 }
 
@@ -185,8 +185,8 @@
 }
 
 .db-stat-card:hover {
-  border-color: rgba(124, 58, 237, 0.15);
-  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.06);
+  border-color: rgba(249, 115, 22, 0.12);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.06);
   transform: translateY(-2px);
 }
 
@@ -194,8 +194,8 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  color: #7c3aed;
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(168, 85, 247, 0.08));
+  color: #f97316;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(251, 191, 36, 0.08));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,7 +209,7 @@
 }
 
 .db-stat-card h3 {
-  color: #1a1a2e;
+  color: #020617;
   margin-top: 6px;
   font-size: 1.5rem;
   font-weight: 700;
@@ -259,8 +259,8 @@
 }
 
 .db-order-card:hover {
-  border-color: rgba(124, 58, 237, 0.15);
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.06);
+  border-color: rgba(249, 115, 22, 0.12);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.06);
   transform: translateY(-2px);
 }
 
@@ -272,7 +272,7 @@
 }
 
 .db-order-head h3 {
-  color: #1a1a2e;
+  color: #020617;
   font-size: 1.05rem;
   font-weight: 700;
 }
@@ -287,12 +287,12 @@
 }
 
 .db-status-pill.status-pending {
-  color: #7c3aed;
-  background: rgba(124, 58, 237, 0.1);
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
 }
 
 .db-status-pill.status-completed {
-  color: #059669;
+  color: #ea580c;
   background: rgba(5, 150, 105, 0.1);
 }
 
@@ -326,12 +326,12 @@
 }
 
 .db-status-select.status-pending {
-  color: #7c3aed;
-  background-color: rgba(124, 58, 237, 0.12);
+  color: #f97316;
+  background-color: rgba(249, 115, 22, 0.12);
 }
 
 .db-status-select.status-completed {
-  color: #059669;
+  color: #ea580c;
   background-color: rgba(5, 150, 105, 0.12);
 }
 
@@ -361,7 +361,7 @@
 
 .db-status-select option {
   background-color: #fff;
-  color: #1a1a2e;
+  color: #020617;
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: none;
@@ -391,20 +391,20 @@
 }
 
 .db-order-item-row strong {
-  color: #1a1a2e;
+  color: #020617;
   font-weight: 600;
 }
 
 .db-order-total {
   display: flex;
   justify-content: space-between;
-  color: #1a1a2e;
+  color: #020617;
   font-weight: 600;
   font-size: 0.95rem;
 }
 
 .db-order-total strong {
-  color: #7c3aed;
+  color: #f97316;
   font-weight: 700;
 }
 
@@ -433,16 +433,16 @@
   border: 1px solid #f1f5f9;
   border-radius: 12px;
   font-size: 0.92rem;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   background: #fff;
-  color: #1a1a2e;
+  color: #020617;
   outline: none;
   transition: all 0.25s ease;
 }
 
 .db-search-input:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.08);
 }
 
 /* Success Toast */
@@ -452,7 +452,7 @@
   gap: 8px;
   padding: 12px 18px;
   background: rgba(5, 150, 105, 0.08);
-  color: #059669;
+  color: #ea580c;
   border: 1px solid rgba(5, 150, 105, 0.15);
   border-radius: 12px;
   font-weight: 600;
@@ -503,7 +503,7 @@
 }
 
 .db-table tbody tr:hover {
-  background: rgba(124, 58, 237, 0.02);
+  background: rgba(249, 115, 22, 0.02);
 }
 
 .db-table tbody tr:last-child td {
@@ -519,7 +519,7 @@
 }
 
 .db-menu-name {
-  color: #1a1a2e;
+  color: #020617;
   font-weight: 600;
   font-size: 0.9rem;
   display: block;
@@ -536,13 +536,13 @@
   border-radius: 99px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: rgba(124, 58, 237, 0.08);
-  color: #7c3aed;
+  background: rgba(249, 115, 22, 0.08);
+  color: #f97316;
 }
 
 .db-price {
   font-weight: 700;
-  color: #1a1a2e !important;
+  color: #020617 !important;
   font-size: 0.92rem !important;
 }
 
@@ -562,11 +562,11 @@
 }
 
 .db-avail-dot.avail-yes {
-  color: #059669;
+  color: #ea580c;
 }
 
 .db-avail-dot.avail-yes::before {
-  background: #059669;
+  background: #ea580c;
 }
 
 .db-avail-dot.avail-no {
@@ -594,7 +594,7 @@
 
 .tag-veg {
   background: rgba(5, 150, 105, 0.1);
-  color: #059669;
+  color: #ea580c;
 }
 
 .tag-spicy {
@@ -623,12 +623,12 @@
 }
 
 .db-icon-btn.edit {
-  color: #7c3aed;
+  color: #f97316;
 }
 
 .db-icon-btn.edit:hover {
-  background: rgba(124, 58, 237, 0.08);
-  border-color: rgba(124, 58, 237, 0.2);
+  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.2);
 }
 
 .db-icon-btn.delete {
@@ -675,7 +675,7 @@
 .db-modal-header h2 {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #020617;
 }
 
 .db-modal-close {
@@ -729,9 +729,9 @@
   padding: 10px 14px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 0.9rem;
-  color: #1a1a2e;
+  color: #020617;
   background: #fff;
   outline: none;
   transition: all 0.25s ease;
@@ -741,8 +741,8 @@
 .db-form-field input:focus,
 .db-form-field select:focus,
 .db-form-field textarea:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.08);
 }
 
 .db-form-checks {
@@ -764,7 +764,7 @@
 .db-check-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #7c3aed;
+  accent-color: #f97316;
   cursor: pointer;
 }
 
@@ -794,14 +794,14 @@
 }
 
 .db-upload-zone:hover {
-  border-color: #7c3aed;
-  background: rgba(124, 58, 237, 0.02);
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.02);
 }
 
 .db-upload-zone.drag-active {
-  border-color: #7c3aed;
-  background: rgba(124, 58, 237, 0.05);
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.08);
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.05);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08);
 }
 
 .db-upload-zone.has-preview {
@@ -839,7 +839,7 @@
 }
 
 .db-upload-progress p {
-  color: #7c3aed;
+  color: #f97316;
   font-weight: 600;
   font-size: 0.88rem;
   margin: 0;
@@ -855,7 +855,7 @@
 
 .db-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  background: linear-gradient(90deg, #f97316, #a78bfa);
   border-radius: 99px;
   transition: width 0.3s ease;
 }
@@ -909,13 +909,13 @@
   font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.25s ease;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .lp-btn-outline:hover {
-  border-color: #7c3aed;
-  color: #7c3aed;
-  background: rgba(124, 58, 237, 0.04);
+  border-color: #f97316;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.04);
 }
 
 /* ===========================

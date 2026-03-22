@@ -1,6 +1,8 @@
 const User = require("../models/user/userSchema");
 const Restaurant = require("../models/restaurant/restaurantSchema");
 const Order = require("../models/order/orderSchema");
+const Menu = require("../models/menu/menuSchema");
+const Cart = require("../models/cart/cartSchema");
 
 // GET /superadmin/orders - all orders across platform (paginated)
 exports.getAllOrders = async (req, res) => {
@@ -40,8 +42,6 @@ exports.getAllRestaurants = async (req, res) => {
 exports.getRestaurantDetail = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const Menu = require("../models/menu/menuSchema");
 
         const [restaurant, users, menuCount, orderCount, orderStats, recentOrders] = await Promise.all([
             Restaurant.findById(id).populate("owner", "email role createdAt"),
@@ -121,11 +121,25 @@ exports.deleteRestaurant = async (req, res) => {
         const restaurant = await Restaurant.findById(id);
         if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
 
-        // Clean up related users
-        await User.deleteMany({ restaurant: id });
-        await Restaurant.findByIdAndDelete(id);
+        const [usersResult, menuResult, cartsResult, ordersResult, restaurantResult] = await Promise.all([
+            User.deleteMany({ restaurant: id }),
+            Menu.deleteMany({ restaurant: id }),
+            Cart.deleteMany({ restaurant: id }),
+            Order.deleteMany({ restaurant: id }),
+            Restaurant.deleteOne({ _id: id })
+        ]);
 
-        res.json({ success: true, message: "Restaurant and its users deleted." });
+        res.json({
+            success: true,
+            message: "Restaurant and related data deleted.",
+            deleted: {
+                users: usersResult.deletedCount || 0,
+                menuItems: menuResult.deletedCount || 0,
+                carts: cartsResult.deletedCount || 0,
+                orders: ordersResult.deletedCount || 0,
+                restaurants: restaurantResult.deletedCount || 0
+            }
+        });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

@@ -19,6 +19,22 @@ exports.auth = (req, res, next) => {
   }
 };
 
+exports.optionalAuth = (req, _res, next) => {
+  try {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith("Bearer ")) {
+      return next();
+    }
+
+    const token = header.split(" ")[1];
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    return next();
+  } catch (_err) {
+    // Best-effort decode only; continue as unauthenticated for public routes.
+    return next();
+  }
+};
+
 exports.onlyAdmin = (req,res,next)=>{
   
   console.log(req.user);

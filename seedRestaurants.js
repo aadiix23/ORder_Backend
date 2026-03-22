@@ -20,12 +20,30 @@ const seedData = async () => {
         await Menu.deleteMany({});
         console.log("Cleanup complete.");
 
+        console.log("Seeding Users...");
+
+        // 1. Create Admin Users (restaurant link is added after restaurant creation)
+        const passwordHash = await bcrypt.hash("admin123", 10);
+
+        const admin1 = await User.create({
+            email: "admin@pizzapalace.com",
+            password: passwordHash,
+            role: "admin"
+        });
+
+        const admin2 = await User.create({
+            email: "admin@burgerboss.com",
+            password: passwordHash,
+            role: "admin"
+        });
+
         console.log("Seeding Restaurants...");
 
-        // 1. Create Restaurants
+        // 2. Create Restaurants owned by admins
         const pizzaPalace = await Restaurant.create({
             name: "Pizza Palace",
             slug: "pizza-palace",
+            owner: admin1._id,
             address: "123 Italian Street, Food Valley",
             contactNumber: "1234567890"
         });
@@ -33,28 +51,14 @@ const seedData = async () => {
         const burgerBoss = await Restaurant.create({
             name: "Burger Boss",
             slug: "burger-boss",
+            owner: admin2._id,
             address: "456 Grill Avenue, Meat Town",
             contactNumber: "0987654321"
         });
 
-        console.log("Seeding Users...");
-
-        // 2. Create Admin Users
-        const passwordHash = await bcrypt.hash("admin123", 10);
-
-        const admin1 = await User.create({
-            email: "admin@pizzapalace.com",
-            password: passwordHash,
-            role: "admin",
-            restaurant: pizzaPalace._id
-        });
-
-        const admin2 = await User.create({
-            email: "admin@burgerboss.com",
-            password: passwordHash,
-            role: "admin",
-            restaurant: burgerBoss._id
-        });
+        admin1.restaurant = pizzaPalace._id;
+        admin2.restaurant = burgerBoss._id;
+        await Promise.all([admin1.save(), admin2.save()]);
 
         console.log("Seeding Menu Items...");
 

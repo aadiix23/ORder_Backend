@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
       ref: "Restaurant",
       index: true
     },
+    fcmTokens: {
+      type: [String],
+      default: []
+    },
     disabled: {
       type: Boolean,
       default: false

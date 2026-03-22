@@ -1,22 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #7c3aed;
-  --primary-hover: #6d28d9;
-  --primary-light: rgba(124, 58, 237, 0.08);
+  --primary: #f97316;
+  --primary-hover: #ea580c;
+  --primary-light: rgba(249, 115, 22, 0.08);
   --bg-light: #ffffff;
-  --bg-subtle: #fafbfc;
-  --text-dark: #1a1a2e;
-  --text-muted: #64748b;
-  --border: #f1f5f9;
+  --bg-subtle: #fffaf5;
+  --text-dark: #1e1e1e;
+  --text-muted: #6b7280;
+  --border: #f3f4f6;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Dark theme vars (for menu/cart pages) */
-  --bg-dark: #0f172a;
-  --bg-card: rgba(30, 41, 59, 0.7);
-  --text-main: #f8fafc;
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --bg-dark: #121212;
+  --bg-card: rgba(28, 28, 28, 0.82);
+  --text-main: #fefefe;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -26,7 +26,7 @@
 }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   background-color: var(--bg-light);
   color: var(--text-dark);
   line-height: 1.6;
@@ -49,7 +49,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7c3aed;
+  background: #f97316;
 }
 
 /* ===========================
@@ -91,11 +91,11 @@ body {
   justify-content: center;
   gap: 8px;
   text-decoration: none;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-primary {
-  background: #fbbf24;
+  background: #f59e0b;
   color: #000;
 }
 
@@ -107,12 +107,12 @@ body {
 
 .btn-outline {
   background: transparent;
-  border: 2px solid #fbbf24;
-  color: #fbbf24;
+  border: 2px solid #f59e0b;
+  color: #f59e0b;
 }
 
 .btn-outline:hover {
-  background: #fbbf24;
+  background: #f59e0b;
   color: #000;
 }
 
@@ -135,7 +135,7 @@ body {
 }
 
 .dark-theme input:focus {
-  border-color: #fbbf24;
+  border-color: #f59e0b;
   background: rgba(255, 255, 255, 0.1);
 }
 

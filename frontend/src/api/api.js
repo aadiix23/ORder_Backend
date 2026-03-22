@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:6001'; // Backend running on 6001
+const getApiBaseUrl = () => {
+    if (typeof window === 'undefined') {
+        return 'http://localhost:6001';
+    }
+
+    const { hostname } = window.location;
+    return `http://${hostname}:6001`;
+};
+
+const API_URL = getApiBaseUrl();
 
 const api = axios.create({
     baseURL: API_URL,
@@ -13,7 +22,7 @@ const getAuthHeader = () => {
 
 export const menuApi = {
     getAll: (restaurantId) => api.get(`/menu${restaurantId ? `?restaurantId=${restaurantId}` : ''}`),
-    getById: (id) => api.get(`/menu/${id}`),
+    getById: (id, restaurantId) => api.get(`/menu/${id}${restaurantId ? `?restaurantId=${restaurantId}` : ''}`),
     search: (keyword, restaurantId) => api.get(`/menu/search?keyword=${keyword}${restaurantId ? `&restaurantId=${restaurantId}` : ''}`),
     getByCategory: (category, restaurantId) => api.get(`/menu/category/${category}${restaurantId ? `?restaurantId=${restaurantId}` : ''}`),
     create: (data) => api.post('/menu', data, { headers: getAuthHeader() }),
@@ -65,9 +74,13 @@ export const cartApi = {
 export const orderApi = {
     getAll: () => api.get('/order', { headers: getAuthHeader() }),
     place: (data) => api.post('/order/place', data),
-    getByTable: (tableNumber, restaurantId) => api.get(`/order/table/${tableNumber}?restaurantId=${restaurantId}`),
+    getByTable: (tableNumber, restaurantId) => api.get(`/order/table/${tableNumber}?restaurantId=${restaurantId}`, { headers: getAuthHeader() }),
     updateStatus: (id, status) => api.put(`/order/${id}/status`, { status }, { headers: getAuthHeader() }),
-    getHistory: (phone, restaurantId) => api.get(`/order/history/${phone}?restaurantId=${restaurantId}`),
+    getHistory: (phone, restaurantId, lookupToken) => {
+        const headers = { ...getAuthHeader() };
+        if (lookupToken) headers["x-order-lookup-token"] = lookupToken;
+        return api.get(`/order/history/${phone}?restaurantId=${restaurantId}`, { headers });
+    },
 };
 
 export const uploadApi = {

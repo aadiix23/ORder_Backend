@@ -4,9 +4,9 @@
 .cart-page,
 .history-page {
     background: #fafafa;
-    color: #1a1a2e;
+    color: #020617;
     min-height: 100vh;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Poppins', sans-serif;
     max-width: 480px;
     margin: 0 auto;
     position: relative;
@@ -44,18 +44,18 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 .fg-back-btn:hover {
-    border-color: #e63946;
-    color: #e63946;
+    border-color: #f97316;
+    color: #f97316;
 }
 
 .fg-topbar-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 .fg-topbar-right {
@@ -118,7 +118,7 @@
 .cart-item-name {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     margin: 0 0 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -137,7 +137,7 @@
 .cart-item-price {
     font-size: 1rem;
     font-weight: 800;
-    color: #e63946;
+    color: #f97316;
     margin: 0;
 }
 
@@ -164,21 +164,21 @@
 
 .cart-qty-btn.minus {
     background: #fff0f0;
-    color: #e63946;
+    color: #f97316;
 }
 
 .cart-qty-btn.minus:hover {
-    background: #e63946;
+    background: #f97316;
     color: #fff;
 }
 
 .cart-qty-btn.plus {
-    background: #e63946;
+    background: #f97316;
     color: #fff;
 }
 
 .cart-qty-btn.plus:hover {
-    background: #c1121f;
+    background: #ea580c;
 }
 
 .cart-qty-value {
@@ -186,7 +186,7 @@
     font-weight: 800;
     min-width: 20px;
     text-align: center;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 .cart-remove-btn {
@@ -224,7 +224,7 @@
 .order-summary h3 {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     margin: 0 0 18px;
 }
 
@@ -251,7 +251,7 @@
 }
 
 .summary-line .value {
-    color: #1a1a2e;
+    color: #020617;
     font-weight: 600;
 }
 
@@ -282,12 +282,12 @@
 
 .summary-total-line .label {
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 .summary-total-line .value {
     font-weight: 800;
-    color: #1a1a2e;
+    color: #020617;
     font-size: 1.2rem;
 }
 
@@ -314,7 +314,7 @@
 .customer-info-section h3 {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     margin: 0 0 16px;
 }
 
@@ -325,8 +325,8 @@
     border: 1.5px solid #e8e8e8;
     background: #fafafa;
     font-size: 0.92rem;
-    font-family: 'Outfit', sans-serif;
-    color: #1a1a2e;
+    font-family: 'Poppins', sans-serif;
+    color: #020617;
     outline: none;
     transition: all 0.2s ease;
     margin-bottom: 10px;
@@ -337,9 +337,9 @@
 }
 
 .fg-input:focus {
-    border-color: #e63946;
+    border-color: #f97316;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.08);
 }
 
 /* ---- Bottom Order Bar ---- */
@@ -370,7 +370,7 @@
 .cart-order-price .total-value {
     font-size: 1.4rem;
     font-weight: 800;
-    color: #e63946;
+    color: #f97316;
 }
 
 .cart-order-btn {
@@ -380,7 +380,7 @@
     border: none;
     background: #3d3d3d;
     color: #fff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;
@@ -434,7 +434,7 @@
 .cart-empty-state h2 {
     font-size: 1.3rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     margin-bottom: 8px;
 }
 
@@ -448,18 +448,18 @@
     padding: 14px 32px;
     border-radius: 14px;
     border: none;
-    background: #e63946;
+    background: #f97316;
     color: #fff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(230, 57, 70, 0.2);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.2);
 }
 
 .cart-browse-btn:hover {
-    background: #c1121f;
+    background: #ea580c;
     transform: translateY(-2px);
 }
 
@@ -496,7 +496,7 @@
 
 .payment-sheet h3 {
     margin: 0 0 10px;
-    color: #1a1a2e;
+    color: #020617;
     font-size: 1.35rem;
     font-weight: 800;
 }
@@ -563,7 +563,7 @@
 .order-success-screen h1 {
     font-size: 1.8rem;
     font-weight: 800;
-    color: #1a1a2e;
+    color: #020617;
     margin-bottom: 10px;
 }
 
@@ -574,7 +574,7 @@
 }
 
 .order-success-screen .redirect-text {
-    color: #e63946;
+    color: #f97316;
     font-weight: 700;
     font-size: 0.88rem;
     margin-top: 28px;
@@ -597,9 +597,9 @@
     padding: 14px 20px;
     border-radius: 14px;
     border: none;
-    background: #e63946;
+    background: #f97316;
     color: #fff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
@@ -608,7 +608,7 @@
 }
 
 .history-search-btn:hover {
-    background: #c1121f;
+    background: #ea580c;
 }
 
 .history-empty-state {
@@ -669,12 +669,12 @@
     letter-spacing: 0.5px;
 }
 
-.history-status.completed { background: rgba(5, 150, 105, 0.08); color: #059669; }
+.history-status.completed { background: rgba(5, 150, 105, 0.08); color: #ea580c; }
 .history-status.cancelled { background: rgba(220, 38, 38, 0.08); color: #dc2626; }
 .history-status.preparing { background: rgba(217, 119, 6, 0.08); color: #d97706; }
 .history-status.ready { background: rgba(37, 99, 235, 0.08); color: #2563eb; }
 .history-status.served { background: rgba(13, 148, 136, 0.08); color: #0d9488; }
-.history-status.pending { background: rgba(230, 57, 70, 0.08); color: #e63946; }
+.history-status.pending { background: rgba(249, 115, 22, 0.08); color: #f97316; }
 
 .history-items {
     width: 100%;
@@ -694,7 +694,7 @@
 
 .history-item-row .name {
     font-weight: 600;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 .history-item-row .price {
@@ -714,13 +714,13 @@
 .history-total-row .label {
     font-weight: 700;
     font-size: 1.05rem;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 .history-total-row .value {
     font-weight: 800;
     font-size: 1.1rem;
-    color: #e63946;
+    color: #f97316;
 }
 
 /* ---- Product Detail Page (Full Screen) ---- */
@@ -783,7 +783,7 @@
 .pd-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     margin: 0 0 6px;
     line-height: 1.2;
 }
@@ -825,7 +825,7 @@
 .pd-control-label {
     font-size: 0.82rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     text-transform: capitalize;
 }
 
@@ -849,23 +849,23 @@
 
 .pd-qty-btn.minus {
     background: #fff0f0;
-    color: #e63946;
+    color: #f97316;
     border: 1.5px solid #ffe0e0;
 }
 
 .pd-qty-btn.minus:hover {
-    background: #e63946;
+    background: #f97316;
     color: #fff;
-    border-color: #e63946;
+    border-color: #f97316;
 }
 
 .pd-qty-btn.plus {
-    background: #e63946;
+    background: #f97316;
     color: #fff;
 }
 
 .pd-qty-btn.plus:hover {
-    background: #c1121f;
+    background: #ea580c;
 }
 
 .pd-qty-value {
@@ -873,7 +873,7 @@
     font-weight: 800;
     min-width: 24px;
     text-align: center;
-    color: #1a1a2e;
+    color: #020617;
 }
 
 /* Badges Row */
@@ -896,7 +896,7 @@
 .pd-badge.veg { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
 .pd-badge.nonveg { background: rgba(249, 115, 22, 0.1); color: #ea580c; }
 .pd-badge.spicy { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
-.pd-badge.size { background: rgba(230, 57, 70, 0.06); color: #e63946; }
+.pd-badge.size { background: rgba(249, 115, 22, 0.06); color: #f97316; }
 
 /* Add-ons Section (Toppings / Side Options style) */
 .pd-addons-section {
@@ -906,7 +906,7 @@
 .pd-addons-title {
     font-size: 1rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: #020617;
     margin: 0 0 14px;
 }
 
@@ -937,12 +937,12 @@
 }
 
 .pd-addon-card:hover {
-    border-color: rgba(230, 57, 70, 0.3);
+    border-color: rgba(249, 115, 22, 0.3);
 }
 
 .pd-addon-card.selected {
-    border-color: #e63946;
-    background: rgba(230, 57, 70, 0.03);
+    border-color: #f97316;
+    background: rgba(249, 115, 22, 0.03);
 }
 
 .pd-addon-card .addon-icon {
@@ -960,7 +960,7 @@
 .pd-addon-card .addon-name {
     font-size: 0.76rem;
     font-weight: 600;
-    color: #1a1a2e;
+    color: #020617;
     margin-bottom: 3px;
     white-space: nowrap;
     overflow: hidden;
@@ -970,7 +970,7 @@
 .pd-addon-card .addon-price {
     font-size: 0.7rem;
     font-weight: 700;
-    color: #e63946;
+    color: #f97316;
 }
 
 .pd-addon-check {
@@ -980,7 +980,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #e63946;
+    background: #f97316;
     color: #fff;
     display: flex;
     align-items: center;
@@ -1007,7 +1007,7 @@
 
 .pd-price-display {
     flex-shrink: 0;
-    background: #e63946;
+    background: #f97316;
     color: #fff;
     padding: 14px 20px;
     border-radius: 14px;
@@ -1024,7 +1024,7 @@
     border: none;
     background: #3d3d3d;
     color: #fff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;

@@ -66,6 +66,14 @@ const normalizeImagePayload = (body = {}, options = {}) => {
     return normalized;
 };
 
+const resolveRestaurantScope = (req) => {
+    const fromQuery = String(req.query?.restaurantId || "").trim();
+    if (fromQuery) return fromQuery;
+
+    if (req.user?.restaurant) return String(req.user.restaurant);
+    return null;
+};
+
 exports.createMenuItem = async (req, res) => {
     try {
         const restaurantId = req.user.restaurant || req.body.restaurant;
@@ -129,9 +137,15 @@ exports.createMenuItem = async (req, res) => {
 
 exports.getAllMenuItems = async (req, res) => {
     try {
-        // Filter by restaurant from query (customer) or user context (admin)
-        const restaurantId = req.query.restaurantId || req.user?.restaurant;
-        const filter = restaurantId ? { restaurant: restaurantId } : {};
+        // Always scope menu reads to a single restaurant.
+        const restaurantId = resolveRestaurantScope(req);
+        if (!restaurantId) {
+            return res.status(400).json({
+                success: false,
+                message: "restaurantId is required"
+            });
+        }
+        const filter = { restaurant: restaurantId };
 
         const items = await Menu.find(filter).sort({ createdAt: -1 });
         res.status(200).json({
@@ -149,7 +163,15 @@ exports.getAllMenuItems = async (req, res) => {
 
 exports.getMenuItemById = async (req, res) => {
     try {
-        const item = await Menu.findById(req.params.id);
+        const restaurantId = resolveRestaurantScope(req);
+        if (!restaurantId) {
+            return res.status(400).json({
+                success: false,
+                message: "restaurantId is required"
+            });
+        }
+
+        const item = await Menu.findOne({ _id: req.params.id, restaurant: restaurantId });
         if (!item) {
             return res.status(404).json({
                 success: false,
@@ -231,9 +253,14 @@ exports.deleteMenuById = async (req, res) => {
 exports.getItemByCategory = async (req, res) => {
     try {
         const { category } = req.params;
-        const restaurantId = req.query.restaurantId || req.user?.restaurant;
-        const filter = { category };
-        if (restaurantId) filter.restaurant = restaurantId;
+        const restaurantId = resolveRestaurantScope(req);
+        if (!restaurantId) {
+            return res.status(400).json({
+                success: false,
+                message: "restaurantId is required"
+            });
+        }
+        const filter = { category, restaurant: restaurantId };
 
         const items = await Menu.find(filter);
         res.status(200).json({
@@ -251,7 +278,7 @@ exports.getItemByCategory = async (req, res) => {
 
 exports.searchMenuItems = async (req, res) => {
     try {
-        const { keyword, restaurantId: queryRid } = req.query;
+        const { keyword } = req.query;
         if (!keyword) {
             return res.status(400).json({
                 success: false,
@@ -259,15 +286,21 @@ exports.searchMenuItems = async (req, res) => {
             })
         }
 
-        const restaurantId = queryRid || req.user?.restaurant;
+        const restaurantId = resolveRestaurantScope(req);
+        if (!restaurantId) {
+            return res.status(400).json({
+                success: false,
+                message: "restaurantId is required"
+            });
+        }
         const filter = {
+            restaurant: restaurantId,
             $or: [
                 { name: { $regex: keyword, $options: "i" } },
                 { description: { $regex: keyword, $options: "i" } },
                 { category: { $regex: keyword, $options: "i" } }
             ]
         };
-        if (restaurantId) filter.restaurant = restaurantId;
 
         const items = await Menu.find(filter);
         res.status(200).json({
