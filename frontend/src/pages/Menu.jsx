@@ -448,7 +448,47 @@ const Menu = () => {
                                     <ArrowLeft size={20} />
                                 </button>
                                 <div className="fg-topbar-right">
-                                    <Search size={20} />
+                                    <button
+                                        type="button"
+                                        aria-label="Open cart"
+                                        onClick={() => navigate(`/cart/${tableNumber}?restaurantId=${restaurantId}`)}
+                                        style={{
+                                            position: 'relative',
+                                            width: '42px',
+                                            height: '42px',
+                                            borderRadius: '999px',
+                                            border: '1px solid rgba(255,255,255,0.18)',
+                                            background: 'rgba(15,23,42,0.54)',
+                                            color: '#ffffff',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <ShoppingCart size={18} />
+                                        {cartItems.length > 0 && (
+                                            <span
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '-4px',
+                                                    right: '-2px',
+                                                    minWidth: '18px',
+                                                    height: '18px',
+                                                    borderRadius: '999px',
+                                                    padding: '0 5px',
+                                                    background: 'var(--menu-primary)',
+                                                    color: '#fff',
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 700,
+                                                    lineHeight: '18px',
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                {cartItems.length}
+                                            </span>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
 
