@@ -1,12 +1,7 @@
 import axios from 'axios';
 
 const getApiBaseUrl = () => {
-    if (typeof window === 'undefined') {
-        return 'http://localhost:6001';
-    }
-
-    const { hostname } = window.location;
-    return `http://${hostname}:6001`;
+    return 'http://3.1.210.131:6002';
 };
 
 const API_URL = getApiBaseUrl();
